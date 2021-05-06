@@ -8,6 +8,7 @@
 import Foundation
 
 public enum FirebaseError: Error {
+    case alreadySignedIn
     case noUid
     case noQuerySnapshot
     case noDocumentSnapshot
