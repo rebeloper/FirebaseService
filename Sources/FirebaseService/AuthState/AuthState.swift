@@ -11,10 +11,11 @@ import Firebase
 
 public class AuthState: ObservableObject {
     
+    @Published public var user: User? = nil
     @Published public var isAuthenticated: Bool = false
     @Published public var currentUserUid: String? = nil
     
-    private var cancellables: Set<AnyCancellable> = []
+    public var cancellables: Set<AnyCancellable> = []
     
     public init(shouldLogoutUponLaunch: Bool = false) {
         print("AuthState init")
@@ -25,6 +26,7 @@ public class AuthState: ObservableObject {
     private func startAuthListener() {
         let promise = AuthListener.listen()
         promise.sink { _ in } receiveValue: { result in
+            self.user = result.user
             self.isAuthenticated = result.user != nil
             self.currentUserUid = result.user?.uid
         }.store(in: &cancellables)
