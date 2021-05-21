@@ -54,6 +54,11 @@ public class FirestoreService<T: Codable & Firestorable> {
         return FirestoreDecoder<T>.getCodable(for: reference)
     }
     
+    public static func read(atPath path: String) -> Future<[T], Error> {
+        let reference = Firestore.firestore().collection(path)
+        return FirestoreDecoder<T>.getCodables(for: reference)
+    }
+    
     public static func update(_ document: T, withUid uid: String, atPath path: String) -> Future<T, Error> {
         return Future<T, Error> { completion in
             do {
@@ -76,7 +81,7 @@ public class FirestoreService<T: Codable & Firestorable> {
         }
     }
     
-    public static func query(_ query: Query) -> PassthroughSubject<[T], Error> {
+    public static func query(_ query: Query) -> Future<[T], Error> {
         FirestoreDecoder<T>.getCodables(for: query)
     }
     

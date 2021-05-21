@@ -44,25 +44,24 @@ public struct FirestoreDecoder<T: Codable> {
         }
     }
     
-    public static func getCodables(for query: Query) -> PassthroughSubject<[T], Error> {
-        let subject = PassthroughSubject<[T], Error>()
-        
-        query.getDocuments { (querySnapshot, error) in
-            if let error = error {
-                subject.send(completion: .failure(error))
-                return
+    public static func getCodables(for query: Query) -> Future<[T], Error> {
+        return Future<[T], Error> { completion in
+            query.getDocuments { (querySnapshot, err) in
+                if let err = err {
+                    completion(.failure(err))
+                    return
+                }
+                guard let querySnapshot = querySnapshot else {
+                    completion(.failure(FirebaseError.noQuerySnapshot))
+                    return
+                }
+                
+                let documents = querySnapshot.documents.compactMap { document in
+                    try? document.data(as: T.self)
+                }
+                completion(.success(documents))
             }
-            guard let querySnapshot = querySnapshot else {
-                subject.send(completion: .failure(FirebaseError.noQuerySnapshot))
-                return
-            }
-            let documents = querySnapshot.documents.compactMap { document in
-                try? document.data(as: T.self)
-            }
-            subject.send(documents)
         }
-        
-        return subject
     }
     
     public static func listen(to query: Query) -> PassthroughSubject<[T], Error> {
