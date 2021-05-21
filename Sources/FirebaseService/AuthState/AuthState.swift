@@ -14,6 +14,7 @@ public class AuthState: ObservableObject {
     @Published public var user: User? = nil
     @Published public var isAuthenticated: Bool = false
     @Published public var currentUserUid: String? = nil
+    @Published public var email: String = ""
     
     public var cancellables: Set<AnyCancellable> = []
     
@@ -29,6 +30,7 @@ public class AuthState: ObservableObject {
             self.user = result.user
             self.isAuthenticated = result.user != nil
             self.currentUserUid = result.user?.uid
+            self.email = result.user?.email ?? ""
         }.store(in: &cancellables)
     }
     
