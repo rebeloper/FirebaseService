@@ -69,4 +69,40 @@ public struct AuthService {
         }
     }
     
+    public static func updateEmail(to email: String) -> Future<Bool, Error> {
+        return Future<Bool, Error> { completion in
+            Auth.auth().currentUser?.updateEmail(to: email, completion: { error in
+                if let error = error {
+                    completion(.failure(error))
+                    return
+                }
+                completion(.success(true))
+            })
+        }
+    }
+    
+    public static func updatePassword(to password: String) -> Future<Bool, Error> {
+        return Future<Bool, Error> { completion in
+            Auth.auth().currentUser?.updatePassword(to: password, completion: { error in
+                if let error = error {
+                    completion(.failure(error))
+                    return
+                }
+                completion(.success(true))
+            })
+        }
+    }
+    
+    public static func updatePhone(to phoneNumber: PhoneAuthCredential) -> Future<Bool, Error> {
+        return Future<Bool, Error> { completion in
+            Auth.auth().currentUser?.updatePhoneNumber(phoneNumber, completion: { error in
+                if let error = error {
+                    completion(.failure(error))
+                    return
+                }
+                completion(.success(true))
+            })
+        }
+    }
+    
 }
