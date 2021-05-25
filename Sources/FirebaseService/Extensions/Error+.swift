@@ -7,8 +7,8 @@
 
 import Foundation
 
-extension Error {
-    var message: String {
+public extension Error {
+    var firebaseServiceMessage: String {
         switch self {
         case is FirebaseError:
             return (self as? FirebaseError)?.rawValue.description ?? self.localizedDescription

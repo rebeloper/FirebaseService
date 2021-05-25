@@ -7,7 +7,7 @@
 
 import Foundation
 
-extension Int {
+public extension Int {
     func MB() -> Int64 {
         Int64(self * 1024 * 1024)
     }
