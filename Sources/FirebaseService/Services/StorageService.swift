@@ -199,7 +199,7 @@ public class StorageService {
         completion(.success(true))
     }
     
-    func downloadFrom(url: String, maxSizeInMB size: Int64 = 1.MB(), completion: @escaping (Result<Data, Error>) -> ()) {
+    public static func downloadFrom(url: String, maxSizeInMB size: Int64 = 1.MB(), completion: @escaping (Result<Data, Error>) -> ()) {
         let reference = Storage.storage().reference(forURL: url)
         reference.getData(maxSize: size) { data, err in
             if let err = err {
