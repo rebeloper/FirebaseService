@@ -185,6 +185,11 @@ public class StorageService {
     public static func delete(forIndex index:Int, urls: [String], completion: @escaping (Result<Bool, Error>) -> ()) {
         if index < urls.count {
             let url = urls[index]
+            if url == "" {
+                print("StorageService: Delete url is empty string - skipping delete")
+                completion(.success(true))
+                return
+            }
             delete(at: url) { (result) in
                 switch result {
                 case .success(let finished):
