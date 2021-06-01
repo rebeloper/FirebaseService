@@ -19,7 +19,38 @@ public enum FirebaseError: Error {
     case noUrl
     case noData
     case somethingWentWrong
-    case custom(description: String)
+    case custom(description: String, code: Int)
+}
+
+extension FirebaseError {
+    public var code: Int {
+        switch self {
+        case .alreadySignedIn:
+            return 0
+        case .noUid:
+            return 1
+        case .noQuerySnapshot:
+            return 2
+        case .noDocumentSnapshot:
+            return 3
+        case .documentDoesNotExist:
+            return 4
+        case .noAuthDataResult:
+            return 5
+        case .noProfile:
+            return 6
+        case .noImageAvailable:
+            return 7
+        case .noUrl:
+            return 8
+        case .noData:
+            return 9
+        case .somethingWentWrong:
+            return 10
+        case .custom(description: _, code: let code):
+            return code
+        }
+    }
 }
 
 extension FirebaseError: CustomStringConvertible {
@@ -47,7 +78,7 @@ extension FirebaseError: CustomStringConvertible {
             return "No data"
         case .somethingWentWrong:
             return "Something went wrong"
-        case .custom(description: let description):
+        case .custom(description: let description, code: _):
             return description
         }
     }
@@ -78,7 +109,7 @@ extension FirebaseError: LocalizedError {
             return NSLocalizedString("No data.", comment: "No data")
         case .somethingWentWrong:
             return NSLocalizedString("Something went wrong.", comment: "Something went wrong")
-        case .custom(description: let description):
+        case .custom(description: let description, code: _):
             return NSLocalizedString(description, comment: description)
         }
     }
