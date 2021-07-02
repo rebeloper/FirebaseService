@@ -7,6 +7,7 @@
 
 import SwiftUI
 import FirebaseFirestore
+import FirebaseFirestoreSwift
 import Combine
 
 public class FirestoreService<T: Codable & Firestorable> {
