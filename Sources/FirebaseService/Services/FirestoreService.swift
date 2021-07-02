@@ -5,15 +5,8 @@
 //  Created by Alex Nagy on 20.04.2021.
 //
 
-//
-//  FirestoreService.swift
-//  MVVMCS
-//
-//  Created by Alex Nagy on 23.01.2021.
-//
-
 import SwiftUI
-import Firebase
+import FirebaseFirestore
 import Combine
 
 public class FirestoreService<T: Codable & Firestorable> {
