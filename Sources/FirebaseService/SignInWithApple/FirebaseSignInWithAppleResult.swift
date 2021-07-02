@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Firebase
 import FirebaseAuth
 
 public struct FirebaseSignInWithAppleResult {
