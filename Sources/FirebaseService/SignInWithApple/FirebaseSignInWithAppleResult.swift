@@ -6,10 +6,8 @@
 //
 
 import Foundation
-import Firebase
-import FirebaseAuth
 
 public struct FirebaseSignInWithAppleResult {
     public let token: FirebaseSignInWithAppleToken
-    public let authDataResult: AuthDataResult
+    public let uid: String
 }

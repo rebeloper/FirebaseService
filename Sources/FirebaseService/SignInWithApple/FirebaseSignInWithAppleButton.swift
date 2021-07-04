@@ -83,7 +83,7 @@ public struct FirebaseSignInWithAppleButton: View {
                 onCompletion(.failure(FirebaseSignInWithAppleError.noAuthDataResult))
                 return
             }
-            let result = FirebaseSignInWithAppleResult(token: token, authDataResult: authDataResult)
+            let result = FirebaseSignInWithAppleResult(token: token, uid: authDataResult.user.uid)
             onCompletion(.success(result))
         }
     }
