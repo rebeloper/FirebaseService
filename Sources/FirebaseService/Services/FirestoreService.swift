@@ -5,7 +5,7 @@
 //  Created by Alex Nagy on 20.04.2021.
 //
 
-import SwiftUI
+import Foundation
 import FirebaseFirestore
 import FirebaseFirestoreSwift
 import Combine
