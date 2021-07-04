@@ -5,7 +5,6 @@
 //  Created by Alex Nagy on 06.05.2021.
 //
 
-import SwiftUI
 import Combine
 import Firebase
 
