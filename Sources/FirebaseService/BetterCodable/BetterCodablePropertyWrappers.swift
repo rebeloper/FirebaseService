@@ -7,6 +7,7 @@
 
 import Foundation
 import BetterCodable
+import FirebaseFirestore
 
 // MARK: - True
 public struct DefaultTrueStrategy: DefaultCodableStrategy {
