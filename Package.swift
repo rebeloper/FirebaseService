@@ -17,8 +17,8 @@ let package = Package(
     dependencies: [
         // Dependencies declare other packages that this package depends on.
         // .package(url: /* package url */, from: "1.0.0"),
-        .package(name: "Firebase", url: "https://github.com/firebase/firebase-ios-sdk.git", .upToNextMajor(from: "8.2.0")),
-        .package(name: "BetterCodable", url: "https://github.com/marksands/BetterCodable.git", .upToNextMajor(from: "0.3.0"))
+        .package(name: "Firebase", url: "https://github.com/firebase/firebase-ios-sdk.git", .upToNextMajor(from: "8.7.0")),
+        .package(name: "BetterCodable", url: "https://github.com/marksands/BetterCodable.git", .upToNextMajor(from: "0.4.0"))
     ],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
