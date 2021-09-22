@@ -218,4 +218,132 @@ public class StorageService {
             completion(.success(data))
         }
     }
+    
+    // MARK: - Async functions
+    
+    @available(iOS 15, *)
+    public static func save(image: UIImage, folderPath: String, compressionQuality: CGFloat) async throws -> URL {
+        try await withCheckedThrowingContinuation({ continuation in
+            save(image: image, folderPath: folderPath, compressionQuality: compressionQuality) { result in
+                switch result {
+                case .success(let url):
+                    continuation.resume(returning: url)
+                case .failure(let err):
+                    continuation.resume(throwing: err)
+                }
+            }
+        })
+    }
+    
+    @available(iOS 15, *)
+    public static func delete(at url: String) async throws -> Bool {
+        try await withCheckedThrowingContinuation({ continuation in
+            delete(at: url) { result in
+                switch result {
+                case .success(let success):
+                    continuation.resume(returning: success)
+                case .failure(let err):
+                    continuation.resume(throwing: err)
+                }
+            }
+        })
+    }
+    
+    @available(iOS 15, *)
+    public static func handleImageChange(newImage: UIImage, folderPath: String, compressionQuality: CGFloat, oldImageUrl: String) async throws -> URL {
+        try await withCheckedThrowingContinuation({ continuation in
+            handleImageChange(newImage: newImage, folderPath: folderPath, compressionQuality: compressionQuality, oldImageUrl: oldImageUrl) { result in
+                switch result {
+                case .success(let url):
+                    continuation.resume(returning: url)
+                case .failure(let err):
+                    continuation.resume(throwing: err)
+                }
+            }
+        })
+    }
+    
+    @available(iOS 15, *)
+    public static func handleDataChange(newData: Data, folderPath: String, compressionQuality: CGFloat, oldDataUrl: String, completion: @escaping (Result<URL, Error>) -> ()) async throws -> URL {
+        try await withCheckedThrowingContinuation({ continuation in
+            handleDataChange(newData: newData, folderPath: folderPath, compressionQuality: compressionQuality, oldDataUrl: oldDataUrl) { result in
+                switch result {
+                case .success(let url):
+                    continuation.resume(returning: url)
+                case .failure(let err):
+                    continuation.resume(throwing: err)
+                }
+            }
+        })
+    }
+    
+    @available(iOS 15, *)
+    public static func save(data: Data, folderPath: String) async throws -> URL {
+        try await withCheckedThrowingContinuation({ continuation in
+            save(data: data, folderPath: folderPath) { result in
+                switch result {
+                case .success(let url):
+                    continuation.resume(returning: url)
+                case .failure(let err):
+                    continuation.resume(throwing: err)
+                }
+            }
+        })
+    }
+    
+    @available(iOS 15, *)
+    public static func batchUpload(images: [UIImage], atPath path: StorageReference, oldImageUrls: [String], compressionQuality: CGFloat = 1.0) async throws -> [String] {
+        try await withCheckedThrowingContinuation({ continuation in
+            batchUpload(images: images, atPath: path, oldImageUrls: oldImageUrls, compressionQuality: compressionQuality) { result in
+                switch result {
+                case .success(let urls):
+                    continuation.resume(returning: urls)
+                case .failure(let err):
+                    continuation.resume(throwing: err)
+                }
+            }
+        })
+    }
+    
+    @available(iOS 15, *)
+    public static func batchUpload(datas: [Data], atPath path: StorageReference, oldDataUrls: [String]) async throws -> [String] {
+        try await withCheckedThrowingContinuation({ continuation in
+            batchUpload(datas: datas, atPath: path, oldDataUrls: oldDataUrls) { result in
+                switch result {
+                case .success(let urls):
+                    continuation.resume(returning: urls)
+                case .failure(let err):
+                    continuation.resume(throwing: err)
+                }
+            }
+        })
+    }
+    
+    @available(iOS 15, *)
+    public static func batchDelete(_ urls: [String]) async throws -> Bool {
+        try await withCheckedThrowingContinuation({ continuation in
+            batchDelete(urls) { result in
+                switch result {
+                case .success(let success):
+                    continuation.resume(returning: success)
+                case .failure(let err):
+                    continuation.resume(throwing: err)
+                }
+            }
+        })
+    }
+    
+    @available(iOS 15, *)
+    public static func downloadFrom(url: String, maxSizeInMB size: Int64 = 1.MB()) async throws -> Data {
+        try await withCheckedThrowingContinuation({ continuation in
+            downloadFrom(url: url, maxSizeInMB: size) { result in
+                switch result {
+                case .success(let data):
+                    continuation.resume(returning: data)
+                case .failure(let err):
+                    continuation.resume(throwing: err)
+                }
+            }
+        })
+    }
 }
