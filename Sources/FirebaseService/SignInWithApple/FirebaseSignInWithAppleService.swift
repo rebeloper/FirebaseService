@@ -1,8 +1,8 @@
 //
-//  FirebaseSignInWithAppleButton.swift
+//  FirebaseSignInWithAppleService.swift
 //  
 //
-//  Created by Alex Nagy on 20.04.2021.
+//  Created by Alex Nagy on 28.09.2021.
 //
 
 import SwiftUI
@@ -10,34 +10,26 @@ import AuthenticationServices
 import CryptoKit
 import FirebaseAuth
 
-public struct FirebaseSignInWithAppleButton: View {
+public class FirebaseSignInWithAppleService: NSObject, ObservableObject {
     
-    public var label: SignInWithAppleButton.Label
-    public var requestedScopes: [ASAuthorization.Scope]?
-    public var onCompletion: ((Result<FirebaseSignInWithAppleResult, Error>) -> Void)
+    @Published public var error: Error? = nil
+    @Published public var result: FirebaseSignInWithAppleResult? = nil
     
-    @State public var currentNonce: String? = nil
+    // Unhashed nonce.
+    fileprivate var currentNonce: String?
     
-    public init(label: SignInWithAppleButton.Label = .signIn, requestedScopes: [ASAuthorization.Scope]? = [.fullName, .email], onCompletion: @escaping ((Result<FirebaseSignInWithAppleResult, Error>) -> Void) = {_ in}) {
-        self.label = label
-        self.requestedScopes = requestedScopes
-        self.onCompletion = onCompletion
-    }
-    
-    public var body: some View {
-        SignInWithAppleButton(label) { (request) in
-            request.requestedScopes = requestedScopes
-            let nonce = randomNonceString()
-            currentNonce = nonce
-            request.nonce = sha256(nonce)
-        } onCompletion: { (result) in
-            switch result {
-            case .success(let authorization):
-                createToken(from: authorization)
-            case .failure(let err):
-                onCompletion(.failure(err))
-            }
-        }
+    public func startSignInWithAppleFlow() {
+        let nonce = randomNonceString()
+        currentNonce = nonce
+        let appleIDProvider = ASAuthorizationAppleIDProvider()
+        let request = appleIDProvider.createRequest()
+        request.requestedScopes = [.fullName, .email]
+        request.nonce = sha256(nonce)
+        
+        let authorizationController = ASAuthorizationController(authorizationRequests: [request])
+        authorizationController.delegate = self
+        authorizationController.presentationContextProvider = self
+        authorizationController.performRequests()
     }
     
     public func createToken(from authorization: ASAuthorization) {
@@ -46,11 +38,11 @@ public struct FirebaseSignInWithAppleButton: View {
                 fatalError("Invalid state: A login callback was received, but no login request was sent.")
             }
             guard let appleIDToken = appleIDCredential.identityToken else {
-                onCompletion(.failure(FirebaseSignInWithAppleError.noIdentityToken))
+                error = FirebaseSignInWithAppleError.noIdentityToken
                 return
             }
             guard let idTokenString = String(data: appleIDToken, encoding: .utf8) else {
-                onCompletion(.failure(FirebaseSignInWithAppleError.noTokenString))
+                error = FirebaseSignInWithAppleError.noTokenString
                 return
             }
             
@@ -58,7 +50,7 @@ public struct FirebaseSignInWithAppleButton: View {
             signInToFirebase(with: token)
             
         } else {
-            onCompletion(.failure(FirebaseSignInWithAppleError.noAppleIdCredential))
+            error = FirebaseSignInWithAppleError.noAppleIdCredential
         }
     }
     
@@ -76,15 +68,15 @@ public struct FirebaseSignInWithAppleButton: View {
                 // Error. If error.code == .MissingOrInvalidNonce, make sure
                 // you're sending the SHA256-hashed nonce as a hex string with
                 // your request to Apple.
-                onCompletion(.failure(err))
+                self.error = err
                 return
             }
             guard let authDataResult = authDataResult else {
-                onCompletion(.failure(FirebaseSignInWithAppleError.noAuthDataResult))
+                self.error = FirebaseSignInWithAppleError.noAuthDataResult
                 return
             }
             let result = FirebaseSignInWithAppleResult(token: token, uid: authDataResult.user.uid)
-            onCompletion(.success(result))
+            self.result = result
         }
     }
     
@@ -148,3 +140,31 @@ public struct FirebaseSignInWithAppleButton: View {
         return name
     }
 }
+
+extension FirebaseSignInWithAppleService: ASAuthorizationControllerDelegate {
+    public func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
+        createToken(from: authorization)
+    }
+    
+    public func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
+        self.error = error
+    }
+}
+
+extension FirebaseSignInWithAppleService : ASAuthorizationControllerPresentationContextProviding {
+    
+    public var window: UIWindow? {
+        guard let scene = UIApplication.shared.connectedScenes.first,
+              let windowSceneDelegate = scene.delegate as? UIWindowSceneDelegate,
+              let window = windowSceneDelegate.window else {
+            return nil
+        }
+        return window
+    }
+
+    public func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+        return self.window!
+    }
+    
+}
+
