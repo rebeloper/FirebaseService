@@ -18,7 +18,10 @@ public class FirebaseSignInWithAppleService: NSObject, ObservableObject {
     // Unhashed nonce.
     fileprivate var currentNonce: String?
     
-    public func startSignInWithAppleFlow() {
+    public let onResult: () -> ()
+    
+    public func startSignInWithAppleFlow(onResult: () -> ()) {
+        self.onResult = onResult
         let nonce = randomNonceString()
         currentNonce = nonce
         let appleIDProvider = ASAuthorizationAppleIDProvider()
@@ -77,6 +80,7 @@ public class FirebaseSignInWithAppleService: NSObject, ObservableObject {
             }
             let result = FirebaseSignInWithAppleResult(token: token, uid: authDataResult.user.uid)
             self.result = result
+            onResult()
         }
     }
     
