@@ -83,5 +83,31 @@ public class FirestoreService<T: Codable & Firestorable> {
         FirestoreDecoder<T>.listen(to: query)
     }
     
+    public static func createIfNonExistent(_ document: T, withUid uid: String, atPath path: String) -> Future<T, Error> {
+        return Future<T, Error> { completion in
+            let reference = Firestore.firestore().collection(path).document(uid)
+            FirestoreDecoder<T>.getDocument(reference: reference) { result in
+                switch result {
+                case .success(let document):
+                    completion(.success(document))
+                case .failure(let err):
+                    if let error = err as? FirebaseError, error.code == FirebaseError.documentDoesNotExist.code {
+                        do {
+                            var newDocument = document
+                            newDocument.uid = uid
+                            let reference = Firestore.firestore().collection(path).document(uid)
+                            try reference.setData(from: newDocument)
+                            completion(.success(newDocument))
+                        } catch {
+                            completion(.failure(error))
+                        }
+                    } else {
+                        completion(.failure(err))
+                    }
+                }
+            }
+        }
+    }
+    
 }
 
