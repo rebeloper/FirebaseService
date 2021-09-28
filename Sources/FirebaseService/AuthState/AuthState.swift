@@ -11,7 +11,7 @@ import Firebase
 public class AuthState: ObservableObject {
     
     @Published public var user: User? = nil
-    @Published public var isAuthenticated: Bool = false
+    @Published public var value: AuthenticationStateValue = .undefined
     @Published public var currentUserUid: String? = nil
     @Published public var email: String = ""
     
@@ -27,7 +27,7 @@ public class AuthState: ObservableObject {
         let promise = AuthListener.listen()
         promise.sink { _ in } receiveValue: { result in
             self.user = result.user
-            self.isAuthenticated = result.user != nil
+            self.value = result.user != nil ? .authenticated : .notAuthenticated
             self.currentUserUid = result.user?.uid
             self.email = result.user?.email ?? ""
         }.store(in: &cancellables)
@@ -51,4 +51,3 @@ public class AuthState: ObservableObject {
         }
     }
 }
-
