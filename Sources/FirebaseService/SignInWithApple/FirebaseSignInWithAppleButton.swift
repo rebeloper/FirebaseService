@@ -54,7 +54,7 @@ public struct FirebaseSignInWithAppleButton: View {
                 return
             }
             
-            let token = FirebaseSignInWithAppleToken(name: getName(from: appleIDCredential), nonce: nonce, idTokenString: idTokenString)
+            let token = FirebaseSignInWithAppleToken(appleIDCredential: appleIDCredential, nonce: nonce, idTokenString: idTokenString)
             signInToFirebase(with: token)
             
         } else {

@@ -6,9 +6,10 @@
 //
 
 import Foundation
+import AuthenticationServices
 
 public struct FirebaseSignInWithAppleToken {
-    public let name: String
+    public let appleIDCredential: ASAuthorizationAppleIDCredential
     public let nonce: String
     public let idTokenString: String
 }
