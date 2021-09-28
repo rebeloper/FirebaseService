@@ -53,7 +53,7 @@ extension FirebaseSignInWithAppleService: ASAuthorizationControllerDelegate {
     }
 }
 
-extension FirebaseSignInWithAppleService : ASAuthorizationControllerPresentationContextProviding {
+extension FirebaseSignInWithAppleService: ASAuthorizationControllerPresentationContextProviding {
     
     public var window: UIWindow? {
         guard let scene = UIApplication.shared.connectedScenes.first,
