@@ -54,7 +54,7 @@ public struct FirebaseSignInWithAppleButton: View {
                 return
             }
             
-            let token = FirebaseSignInWithAppleToken(appleIDCredential: appleIDCredential, nonce: nonce, idTokenString: idTokenString)
+            let token = FirebaseSignInWithAppleToken(appleIDCredential: appleIDCredential, fullName: getFullName(from: appleIDCredential), nonce: nonce, idTokenString: idTokenString)
             signInToFirebase(with: token)
             
         } else {
@@ -132,7 +132,7 @@ public struct FirebaseSignInWithAppleButton: View {
         return hashString
     }
     
-    public func getName(from appleIDCredential: ASAuthorizationAppleIDCredential) -> String {
+    public func getFullName(from appleIDCredential: ASAuthorizationAppleIDCredential) -> String {
         var name = ""
         let fullName = appleIDCredential.fullName
         let givenName = fullName?.givenName ?? ""
