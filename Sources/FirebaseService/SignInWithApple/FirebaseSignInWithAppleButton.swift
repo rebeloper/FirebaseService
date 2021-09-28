@@ -11,11 +11,11 @@ import FirebaseAuth
 
 public struct FirebaseSignInWithAppleButton: View {
     
-    public var label: SignInWithAppleButton.Label
-    public var requestedScopes: [ASAuthorization.Scope]?
-    public var onCompletion: ((Result<FirebaseSignInWithAppleResult, Error>) -> Void)
+    private var label: SignInWithAppleButton.Label
+    private var requestedScopes: [ASAuthorization.Scope]?
+    private var onCompletion: ((Result<FirebaseSignInWithAppleResult, Error>) -> Void)
     
-    @State public var currentNonce: String? = nil
+    @State private var currentNonce: String? = nil
     
     public init(label: SignInWithAppleButton.Label = .signIn, requestedScopes: [ASAuthorization.Scope]? = [.fullName, .email], onCompletion: @escaping ((Result<FirebaseSignInWithAppleResult, Error>) -> Void) = {_ in}) {
         self.label = label

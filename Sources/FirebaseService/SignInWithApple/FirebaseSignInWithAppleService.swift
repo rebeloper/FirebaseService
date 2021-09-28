@@ -11,8 +11,8 @@ import FirebaseAuth
 
 public class FirebaseSignInWithAppleService: NSObject, ObservableObject {
     
-    public var onCompleted: ((FirebaseSignInWithAppleResult) -> ())? = nil
-    public var onFailed: ((Error) -> ())? = nil
+    private var onCompleted: ((FirebaseSignInWithAppleResult) -> ())? = nil
+    private var onFailed: ((Error) -> ())? = nil
     
     // Unhashed nonce.
     fileprivate var currentNonce: String?
