@@ -109,32 +109,31 @@ public class FirestoreService<T: Codable & Firestorable> {
         }
     }
     
-    public static func batchSet(_ batchDocuments: [BatchDocument<T>]) -> Future<[T], Error> {
-        return Future<[T], Error> { completion in
-            
-            var newDocuments: [T] = []
+    public static func batchSet(_ batchDocumentsArray: [[BatchDocument<T>]]) -> Future<Bool, Error> {
+        return Future<Bool, Error> { completion in
             
             let batch = Firestore.firestore().batch()
             
-            for i in 0..<batchDocuments.count {
-                var newDocument = batchDocuments[i].document
-                let path = batchDocuments[i].path
-                let merge = batchDocuments[i].merge
-                
-                var reference: DocumentReference
-                if merge {
-                    reference = Firestore.firestore().collection(path).document()
-                    let uid = reference.documentID
-                    newDocument.uid = uid
-                } else {
-                    reference = Firestore.firestore().collection(path).document(newDocument.uid)
-                }
-                
-                do {
-                    try batch.setData(from: newDocument, forDocument: reference, merge: merge)
-                    newDocuments.append(newDocument)
-                } catch {
-                    completion(.failure(error))
+            batchDocumentsArray.forEach { batchDocuments in
+                batchDocuments.forEach { batchDocument in
+                    var newDocument = batchDocument.document
+                    let path = batchDocument.path
+                    let merge = batchDocument.merge
+                    
+                    var reference: DocumentReference
+                    if merge {
+                        reference = Firestore.firestore().collection(path).document()
+                        let uid = reference.documentID
+                        newDocument.uid = uid
+                    } else {
+                        reference = Firestore.firestore().collection(path).document(newDocument.uid)
+                    }
+                    
+                    do {
+                        try batch.setData(from: newDocument, forDocument: reference, merge: merge)
+                    } catch {
+                        completion(.failure(error))
+                    }
                 }
             }
             
@@ -143,7 +142,7 @@ public class FirestoreService<T: Codable & Firestorable> {
                     completion(.failure(err))
                     return
                 }
-                completion(.success(newDocuments))
+                completion(.success(true))
             }
         }
     }
