@@ -109,43 +109,5 @@ public class FirestoreService<T: Codable & Firestorable> {
         }
     }
     
-    public static func batchSet(_ batchDocumentsArray: [[BatchDocument<T>]]) -> Future<Bool, Error> {
-        return Future<Bool, Error> { completion in
-            
-            let batch = Firestore.firestore().batch()
-            
-            batchDocumentsArray.forEach { batchDocuments in
-                batchDocuments.forEach { batchDocument in
-                    var newDocument = batchDocument.document
-                    let path = batchDocument.path
-                    let merge = batchDocument.merge
-                    
-                    var reference: DocumentReference
-                    if merge {
-                        reference = Firestore.firestore().collection(path).document()
-                        let uid = reference.documentID
-                        newDocument.uid = uid
-                    } else {
-                        reference = Firestore.firestore().collection(path).document(newDocument.uid)
-                    }
-                    
-                    do {
-                        try batch.setData(from: newDocument, forDocument: reference, merge: merge)
-                    } catch {
-                        completion(.failure(error))
-                    }
-                }
-            }
-            
-            batch.commit { err in
-                if let err = err {
-                    completion(.failure(err))
-                    return
-                }
-                completion(.success(true))
-            }
-        }
-    }
-    
 }
 
