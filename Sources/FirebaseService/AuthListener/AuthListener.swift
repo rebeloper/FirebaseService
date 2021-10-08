@@ -23,7 +23,7 @@ public struct AuthListener {
 }
 
 public struct AuthListenerResult {
-    let auth: Auth
-    let user: User?
+    public let auth: Auth
+    public let user: User?
 }
 
