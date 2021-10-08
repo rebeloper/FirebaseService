@@ -10,7 +10,7 @@ import Firebase
 
 public struct AuthListener {
     
-    static func listen() -> PassthroughSubject<AuthListenerResult, Error> {
+    public static func listen() -> PassthroughSubject<AuthListenerResult, Error> {
         let subject = PassthroughSubject<AuthListenerResult, Error>()
         
         Auth.auth().addStateDidChangeListener { (auth, user) in
