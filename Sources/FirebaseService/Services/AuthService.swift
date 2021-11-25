@@ -33,6 +33,10 @@ public struct AuthService {
                         completion(.failure(error))
                         return
                     }
+                    guard let authDataResult = authDataResult else {
+                        completion(.failure(FirebaseError.noAuthDataResult))
+                        return
+                    }
                     completion(.success(authDataResult))
                 }
             } else {
@@ -47,6 +51,10 @@ public struct AuthService {
                 Auth.auth().createUser(withEmail: email, password: password) { (authDataResult, error) in
                     if let error = error {
                         completion(.failure(error))
+                        return
+                    }
+                    guard let authDataResult = authDataResult else {
+                        completion(.failure(FirebaseError.noAuthDataResult))
                         return
                     }
                     completion(.success(authDataResult))
