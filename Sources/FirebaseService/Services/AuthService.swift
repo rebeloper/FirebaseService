@@ -26,7 +26,7 @@ public struct AuthService {
     }
     
     public static func signIn(withEmail email: String, password: String) -> Future<AuthDataResult, Error> {
-        return Future<AuthDataResult?, Error> { completion in
+        return Future<AuthDataResult, Error> { completion in
             if Auth.auth().currentUser == nil {
                 Auth.auth().signIn(withEmail: email, password: password) { (authDataResult, error) in
                     if let error = error {
@@ -46,7 +46,7 @@ public struct AuthService {
     }
     
     public static func signUp(withEmail email: String, password: String) -> Future<AuthDataResult, Error> {
-        return Future<AuthDataResult?, Error> { completion in
+        return Future<AuthDataResult, Error> { completion in
             if Auth.auth().currentUser == nil {
                 Auth.auth().createUser(withEmail: email, password: password) { (authDataResult, error) in
                     if let error = error {
