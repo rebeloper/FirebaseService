@@ -14,32 +14,17 @@ public class FirestoreService<T: Codable & Firestorable> {
     
     //CRUDQL
     
+    // MARK: - Public
+    
     public static func create(_ document: T, atPath path: String) -> Future<T, Error> {
         return Future<T, Error> { completion in
-            do {
-                var newDocument = document
-                let reference = Firestore.firestore().collection(path).document()
-                let uid = reference.documentID
-                newDocument.uid = uid
-                try reference.setData(from: newDocument)
-                completion(.success(newDocument))
-            } catch {
-                completion(.failure(error))
-            }
+            setData(document, atPath: path, completion: completion)
         }
     }
     
     public static func create(_ document: T, withUid uid: String, atPath path: String) -> Future<T, Error> {
         return Future<T, Error> { completion in
-            do {
-                var newDocument = document
-                newDocument.uid = uid
-                let reference = Firestore.firestore().collection(path).document(uid)
-                try reference.setData(from: newDocument)
-                completion(.success(newDocument))
-            } catch {
-                completion(.failure(error))
-            }
+            setData(document, withUid: uid, atPath: path, completion: completion)
         }
     }
     
@@ -64,15 +49,23 @@ public class FirestoreService<T: Codable & Firestorable> {
         }
     }
     
-    public static func delete(_ document: T, withUid uid: String, atPath path: String) -> Future<Bool, Error> {
+    public static func update(_ document: T, atPath path: String) -> Future<T, Error> {
+        return update(document, withUid: document.uid, atPath: path)
+    }
+    
+    public static func delete(atPath path: String, withUid uid: String) -> Future<Bool, Error> {
         return Future<Bool, Error> { completion in
-            Firestore.firestore().collection(path).document(document.uid).delete { error in
+            Firestore.firestore().collection(path).document(uid).delete { error in
                 if let error = error {
                     completion(.failure(error))
                 }
                 completion(.success(true))
             }
         }
+    }
+    
+    public static func delete(_ document: T, atPath path: String) -> Future<Bool, Error> {
+        return delete(atPath: path, withUid: document.uid)
     }
     
     public static func query(_ query: Query) -> Future<[T], Error> {
@@ -92,20 +85,32 @@ public class FirestoreService<T: Codable & Firestorable> {
                     completion(.success(document))
                 case .failure(let err):
                     if let error = err as? FirebaseError, error.code == FirebaseError.documentDoesNotExist.code {
-                        do {
-                            var newDocument = document
-                            newDocument.uid = uid
-                            let reference = Firestore.firestore().collection(path).document(uid)
-                            try reference.setData(from: newDocument)
-                            completion(.success(newDocument))
-                        } catch {
-                            completion(.failure(error))
-                        }
+                        setData(document, withUid: uid, atPath: path, completion: completion)
                     } else {
                         completion(.failure(err))
                     }
                 }
             }
+        }
+    }
+    
+    // MARK: - Private
+    
+    private static func setData(_ document: T, withUid uid: String? = nil, atPath path: String, completion: @escaping (Result<T, Error>) -> ()) {
+        do {
+            var newDocument = document
+            var reference: DocumentReference
+            if let uid = uid {
+                reference = Firestore.firestore().collection(path).document(uid)
+                newDocument.uid = uid
+            } else {
+                reference = Firestore.firestore().collection(path).document()
+                newDocument.uid = reference.documentID
+            }
+            try reference.setData(from: newDocument)
+            completion(.success(newDocument))
+        } catch {
+            completion(.failure(error))
         }
     }
     
