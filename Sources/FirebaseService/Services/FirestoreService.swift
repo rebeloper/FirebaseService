@@ -58,6 +58,7 @@ public class FirestoreService<T: Codable & Firestorable> {
             Firestore.firestore().collection(path).document(uid).delete { error in
                 if let error = error {
                     completion(.failure(error))
+                    return
                 }
                 completion(.success(true))
             }
