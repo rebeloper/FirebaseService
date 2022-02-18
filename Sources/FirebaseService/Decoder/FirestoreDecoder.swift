@@ -10,6 +10,7 @@ import Firebase
 import FirebaseFirestore
 import FirebaseFirestoreSwift
 import Combine
+import SwiftUI
 
 public struct FirestoreDecoder<T: Codable> {
     
@@ -22,6 +23,12 @@ public struct FirestoreDecoder<T: Codable> {
     public static func getCodables(for query: Query) -> Future<[T], Error> {
         return Future<[T], Error> { completion in
             getDocuments(query: query, completion: completion)
+        }
+    }
+    
+    public static func getCodables(for query: Query, lastDocumentSnapshot: Binding<DocumentSnapshot?>) -> Future<[T], Error> {
+        return Future<[T], Error> { completion in
+            getDocuments(query: query, lastDocumentSnapshot: lastDocumentSnapshot, completion: completion)
         }
     }
     
@@ -98,6 +105,29 @@ public struct FirestoreDecoder<T: Codable> {
                 completion(.failure(FirebaseError.noQuerySnapshot))
                 return
             }
+            
+            let documents = querySnapshot.documents.compactMap { document in
+                try? document.data(as: T.self)
+            }
+            completion(.success(documents))
+        }
+    }
+    
+    public static func getDocuments(query: Query, lastDocumentSnapshot: Binding<DocumentSnapshot?>, completion: @escaping (Result<[T], Error>) -> ()) {
+        query.getDocuments { (querySnapshot, err) in
+            if let err = err {
+                completion(.failure(err))
+                return
+            }
+            guard let querySnapshot = querySnapshot else {
+                completion(.failure(FirebaseError.noQuerySnapshot))
+                return
+            }
+            guard let lastDocumentSnap = querySnapshot.documents.last else {
+                completion(.failure(FirebaseError.noLastDocumentSnapshot))
+                return
+            }
+            lastDocumentSnapshot.wrappedValue = lastDocumentSnap
             
             let documents = querySnapshot.documents.compactMap { document in
                 try? document.data(as: T.self)

@@ -9,6 +9,7 @@ import Foundation
 import FirebaseFirestore
 import FirebaseFirestoreSwift
 import Combine
+import SwiftUI
 
 public class FirestoreService<T: Codable & Firestorable> {
     
@@ -71,6 +72,23 @@ public class FirestoreService<T: Codable & Firestorable> {
     
     public static func query(_ query: Query) -> Future<[T], Error> {
         FirestoreDecoder<T>.getCodables(for: query)
+    }
+    
+    public static func query(path: String, limit: Int, orderBy: String, descending: Bool, lastDocumentSnapshot: Binding<DocumentSnapshot?>) -> Future<[T], Error> {
+        var query: Query = Firestore.firestore().collection(path)
+        if lastDocumentSnapshot.wrappedValue != nil {
+            query = Firestore.firestore()
+                .collection(path)
+                .limit(to: limit)
+                .order(by: orderBy, descending: descending)
+                .start(afterDocument: lastDocumentSnapshot.wrappedValue!)
+        } else {
+            query = Firestore.firestore()
+                .collection(path)
+                .limit(to: limit)
+                .order(by: orderBy, descending: descending)
+        }
+        return FirestoreDecoder<T>.getCodables(for: query, lastDocumentSnapshot: lastDocumentSnapshot)
     }
     
     public static func listen(to query: Query) -> PassthroughSubject<[T], Error> {
