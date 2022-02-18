@@ -78,9 +78,9 @@ public class FirestoreService<T: Codable & Firestorable> {
         var theQuery = query
         if lastDocumentSnapshot.wrappedValue != nil {
             theQuery = query
-                .start(afterDocument: lastDocumentSnapshot.wrappedValue!)
                 .order(by: orderBy, descending: descending)
                 .limit(to: limit)
+                .start(afterDocument: lastDocumentSnapshot.wrappedValue!)
         } else {
             theQuery = query
                 .order(by: orderBy, descending: descending)
