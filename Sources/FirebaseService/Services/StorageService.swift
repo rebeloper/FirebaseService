@@ -321,6 +321,7 @@ public class StorageService {
     }
     
     @MainActor
+    @discardableResult
     public static func batchDelete(_ urls: [String]) async throws -> Bool {
         try await withCheckedThrowingContinuation({ continuation in
             batchDelete(urls) { result in
