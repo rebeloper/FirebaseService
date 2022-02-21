@@ -236,6 +236,7 @@ public class StorageService {
     }
     
     @MainActor
+    @discardableResult
     public static func delete(at url: String) async throws -> Bool {
         try await withCheckedThrowingContinuation({ continuation in
             delete(at: url) { result in
