@@ -89,6 +89,23 @@ public class FirestoreService<T: Codable & Firestorable> {
         return FirestoreDecoder<T>.getCodables(for: theQuery, lastDocumentSnapshot: lastDocumentSnapshot)
     }
     
+    public static func query(_ query: Query, whereField: String, isEqualTo: Any, limit: Int, orderBy: String, descending: Bool, lastDocumentSnapshot: Binding<DocumentSnapshot?>) -> Future<[T], Error> {
+        var theQuery = query
+        if lastDocumentSnapshot.wrappedValue != nil {
+            theQuery = query
+                .whereField(whereField, isEqualTo: isEqualTo)
+                .limit(to: limit)
+                .order(by: orderBy, descending: descending)
+                .start(afterDocument: lastDocumentSnapshot.wrappedValue!)
+        } else {
+            theQuery = query
+                .whereField(whereField, isEqualTo: isEqualTo)
+                .limit(to: limit)
+                .order(by: orderBy, descending: descending)
+        }
+        return FirestoreDecoder<T>.getCodables(for: theQuery, lastDocumentSnapshot: lastDocumentSnapshot)
+    }
+    
     public static func listen(to query: Query) -> PassthroughSubject<[T], Error> {
         FirestoreDecoder<T>.listen(to: query)
     }
