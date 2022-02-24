@@ -12,20 +12,45 @@ import Combine
 import SwiftUI
 
 public enum QueryItemType {
-    case isEqualTo
+    case isEqualTo, isNotEqualTo, isLessThan, isLessThanOrEqualTo, isGreaterThan, isGreaterThanOrEqualTo, arrayContains, arrayContainsAny, `in`, notIn
 }
 
 public struct QueryItem {
     public let key: String
     public let type: QueryItemType
-    public let value: Any
+    public let values: [Any]
     
-    public init(key: String,
-                type: QueryItemType,
-                value: Any) {
+    public init(_ key: String,
+                _ type: QueryItemType,
+                _ value: Any) {
         self.key = key
         self.type = type
-        self.value = value
+        self.values = [value]
+    }
+    
+    public init(_ key: String,
+                _ type: QueryItemType,
+                _ values: [Any]) {
+        self.key = key
+        self.type = type
+        self.values = values
+    }
+}
+
+public struct QueryLimit {
+    public var limit: Int
+    public var orderBy: String
+    public var descending: Bool
+    @Binding public var lastDocumentSnapshot: DocumentSnapshot?
+    
+    public init(limit: Int,
+         orderBy: String,
+         descending: Bool,
+         lastDocumentSnapshot: Binding<DocumentSnapshot?>) {
+        self.limit = limit
+        self.orderBy = orderBy
+        self.descending = descending
+        self._lastDocumentSnapshot = lastDocumentSnapshot
     }
 }
 
@@ -92,7 +117,7 @@ public class FirestoreService<T: Codable & Firestorable> {
         FirestoreDecoder<T>.getCodables(for: query)
     }
     
-    public static func query(baseQuery query: Query, limit: Int, orderBy: String, descending: Bool, lastDocumentSnapshot: Binding<DocumentSnapshot?>) -> Future<[T], Error> {
+    public static func query(base query: Query, limit: Int, orderBy: String, descending: Bool, lastDocumentSnapshot: Binding<DocumentSnapshot?>) -> Future<[T], Error> {
         var theQuery = query
         if lastDocumentSnapshot.wrappedValue != nil {
             theQuery = query
@@ -107,19 +132,253 @@ public class FirestoreService<T: Codable & Firestorable> {
         return FirestoreDecoder<T>.getCodables(for: theQuery, lastDocumentSnapshot: lastDocumentSnapshot)
     }
     
-    public static func query(baseQuery query: Query, queryItem: QueryItem, limit: Int, orderBy: String, descending: Bool, lastDocumentSnapshot: Binding<DocumentSnapshot?>) -> Future<[T], Error> {
+    public static func query(base query: Query, items: [QueryItem], limit: QueryLimit) -> Future<[T], Error> {
+        
+        var queryWithQueryItems = query
+        var queryWithLimitAndOrder = queryWithQueryItems
+        
+        items.forEach { queryItem in
+            
+            let key = queryItem.key
+            let type = queryItem.type
+            let values = queryItem.values
+            
+            guard let value = values.first else { return }
+            
+            switch type {
+            case .isEqualTo:
+                queryWithQueryItems = query.whereField(key, isEqualTo: value)
+                
+            case .isNotEqualTo:
+                queryWithQueryItems = query.whereField(key, isNotEqualTo: value)
+                
+            case .isLessThan:
+                queryWithQueryItems = query.whereField(key, isLessThan: value)
+                
+            case .isLessThanOrEqualTo:
+                queryWithQueryItems = query.whereField(key, isLessThanOrEqualTo: value)
+                
+            case .isGreaterThan:
+                queryWithQueryItems = query.whereField(key, isGreaterThan: value)
+                
+            case .isGreaterThanOrEqualTo:
+                queryWithQueryItems = query.whereField(key, isGreaterThanOrEqualTo: value)
+                
+            case .arrayContains:
+                queryWithQueryItems = query.whereField(key, arrayContains: values)
+                
+            case .arrayContainsAny:
+                queryWithQueryItems = query.whereField(key, arrayContainsAny: values)
+                
+            case .in:
+                queryWithQueryItems = query.whereField(key, in: values)
+                
+            case .notIn:
+                queryWithQueryItems = query.whereField(key, notIn: values)
+                
+            }
+            
+            if limit.lastDocumentSnapshot != nil {
+                queryWithLimitAndOrder = queryWithQueryItems
+                    .limit(to: limit.limit)
+                    .order(by: limit.orderBy, descending: limit.descending)
+                    .start(afterDocument: limit.lastDocumentSnapshot!)
+            } else {
+                queryWithLimitAndOrder = queryWithQueryItems
+                    .limit(to: limit.limit)
+                    .order(by: limit.orderBy, descending: limit.descending)
+            }
+        }
+        
+        return FirestoreDecoder<T>.getCodables(for: queryWithLimitAndOrder, lastDocumentSnapshot: limit.$lastDocumentSnapshot)
+        
+    }
+    
+    public static func query(base query: Query, queryItem: QueryItem, limit: Int, orderBy: String, descending: Bool, lastDocumentSnapshot: Binding<DocumentSnapshot?>) -> Future<[T], Error> {
+        
+        let key = queryItem.key
+        let type = queryItem.type
+        let values = queryItem.values
+        
         var theQuery = query
-        switch queryItem.type {
+        switch type {
         case .isEqualTo:
+            guard let value = values.first else {
+                return Future<[T], Error> { completion in
+                    completion(.failure(FirebaseError.noQueryItemValuesFirstValue))
+                }
+            }
             if lastDocumentSnapshot.wrappedValue != nil {
                 theQuery = query
-                    .whereField(queryItem.key, isEqualTo: queryItem.value)
+                    .whereField(key, isEqualTo: value)
                     .limit(to: limit)
                     .order(by: orderBy, descending: descending)
                     .start(afterDocument: lastDocumentSnapshot.wrappedValue!)
             } else {
                 theQuery = query
-                    .whereField(queryItem.key, isEqualTo: queryItem.value)
+                    .whereField(key, isEqualTo: value)
+                    .limit(to: limit)
+                    .order(by: orderBy, descending: descending)
+            }
+        case .isNotEqualTo:
+            guard let value = values.first else {
+                return Future<[T], Error> { completion in
+                    completion(.failure(FirebaseError.noQueryItemValuesFirstValue))
+                }
+            }
+            if lastDocumentSnapshot.wrappedValue != nil {
+                theQuery = query
+                    .whereField(key, isNotEqualTo: value)
+                    .limit(to: limit)
+                    .order(by: orderBy, descending: descending)
+                    .start(afterDocument: lastDocumentSnapshot.wrappedValue!)
+            } else {
+                theQuery = query
+                    .whereField(key, isNotEqualTo: value)
+                    .limit(to: limit)
+                    .order(by: orderBy, descending: descending)
+            }
+        case .isLessThan:
+            guard let value = values.first else {
+                return Future<[T], Error> { completion in
+                    completion(.failure(FirebaseError.noQueryItemValuesFirstValue))
+                }
+            }
+            if lastDocumentSnapshot.wrappedValue != nil {
+                theQuery = query
+                    .whereField(key, isLessThan: value)
+                    .limit(to: limit)
+                    .order(by: orderBy, descending: descending)
+                    .start(afterDocument: lastDocumentSnapshot.wrappedValue!)
+            } else {
+                theQuery = query
+                    .whereField(key, isLessThan: value)
+                    .limit(to: limit)
+                    .order(by: orderBy, descending: descending)
+            }
+        case .isLessThanOrEqualTo:
+            guard let value = values.first else {
+                return Future<[T], Error> { completion in
+                    completion(.failure(FirebaseError.noQueryItemValuesFirstValue))
+                }
+            }
+            if lastDocumentSnapshot.wrappedValue != nil {
+                theQuery = query
+                    .whereField(key, isLessThanOrEqualTo: value)
+                    .limit(to: limit)
+                    .order(by: orderBy, descending: descending)
+                    .start(afterDocument: lastDocumentSnapshot.wrappedValue!)
+            } else {
+                theQuery = query
+                    .whereField(key, isLessThanOrEqualTo: value)
+                    .limit(to: limit)
+                    .order(by: orderBy, descending: descending)
+            }
+        case .isGreaterThan:
+            guard let value = values.first else {
+                return Future<[T], Error> { completion in
+                    completion(.failure(FirebaseError.noQueryItemValuesFirstValue))
+                }
+            }
+            if lastDocumentSnapshot.wrappedValue != nil {
+                theQuery = query
+                    .whereField(key, isGreaterThan: value)
+                    .limit(to: limit)
+                    .order(by: orderBy, descending: descending)
+                    .start(afterDocument: lastDocumentSnapshot.wrappedValue!)
+            } else {
+                theQuery = query
+                    .whereField(key, isGreaterThan: value)
+                    .limit(to: limit)
+                    .order(by: orderBy, descending: descending)
+            }
+        case .isGreaterThanOrEqualTo:
+            guard let value = values.first else {
+                return Future<[T], Error> { completion in
+                    completion(.failure(FirebaseError.noQueryItemValuesFirstValue))
+                }
+            }
+            if lastDocumentSnapshot.wrappedValue != nil {
+                theQuery = query
+                    .whereField(key, isGreaterThanOrEqualTo: value)
+                    .limit(to: limit)
+                    .order(by: orderBy, descending: descending)
+                    .start(afterDocument: lastDocumentSnapshot.wrappedValue!)
+            } else {
+                theQuery = query
+                    .whereField(key, isGreaterThanOrEqualTo: value)
+                    .limit(to: limit)
+                    .order(by: orderBy, descending: descending)
+            }
+        case .arrayContains:
+            guard values.count != 0 else {
+                return Future<[T], Error> { completion in
+                    completion(.failure(FirebaseError.noQueryItemValues))
+                }
+            }
+            if lastDocumentSnapshot.wrappedValue != nil {
+                theQuery = query
+                    .whereField(key, arrayContains: values)
+                    .limit(to: limit)
+                    .order(by: orderBy, descending: descending)
+                    .start(afterDocument: lastDocumentSnapshot.wrappedValue!)
+            } else {
+                theQuery = query
+                    .whereField(key, arrayContains: values)
+                    .limit(to: limit)
+                    .order(by: orderBy, descending: descending)
+            }
+        case .arrayContainsAny:
+            guard values.count != 0 else {
+                return Future<[T], Error> { completion in
+                    completion(.failure(FirebaseError.noQueryItemValues))
+                }
+            }
+            if lastDocumentSnapshot.wrappedValue != nil {
+                theQuery = query
+                    .whereField(key, arrayContainsAny: values)
+                    .limit(to: limit)
+                    .order(by: orderBy, descending: descending)
+                    .start(afterDocument: lastDocumentSnapshot.wrappedValue!)
+            } else {
+                theQuery = query
+                    .whereField(key, arrayContainsAny: values)
+                    .limit(to: limit)
+                    .order(by: orderBy, descending: descending)
+            }
+        case .in:
+            guard values.count != 0 else {
+                return Future<[T], Error> { completion in
+                    completion(.failure(FirebaseError.noQueryItemValues))
+                }
+            }
+            if lastDocumentSnapshot.wrappedValue != nil {
+                theQuery = query
+                    .whereField(key, in: values)
+                    .limit(to: limit)
+                    .order(by: orderBy, descending: descending)
+                    .start(afterDocument: lastDocumentSnapshot.wrappedValue!)
+            } else {
+                theQuery = query
+                    .whereField(key, in: values)
+                    .limit(to: limit)
+                    .order(by: orderBy, descending: descending)
+            }
+        case .notIn:
+            guard values.count != 0 else {
+                return Future<[T], Error> { completion in
+                    completion(.failure(FirebaseError.noQueryItemValues))
+                }
+            }
+            if lastDocumentSnapshot.wrappedValue != nil {
+                theQuery = query
+                    .whereField(key, notIn: values)
+                    .limit(to: limit)
+                    .order(by: orderBy, descending: descending)
+                    .start(afterDocument: lastDocumentSnapshot.wrappedValue!)
+            } else {
+                theQuery = query
+                    .whereField(key, notIn: values)
                     .limit(to: limit)
                     .order(by: orderBy, descending: descending)
             }

@@ -8,6 +8,7 @@
 import Foundation
 
 public enum FirebaseError: Error {
+    case somethingWentWrong
     case alreadySignedIn
     case noUid
     case noQuerySnapshot
@@ -19,13 +20,16 @@ public enum FirebaseError: Error {
     case noUrl
     case noData
     case noLastDocumentSnapshot
-    case somethingWentWrong
+    case noQueryItemValuesFirstValue
+    case noQueryItemValues
     case custom(description: String, code: Int)
 }
 
 extension FirebaseError {
     public var code: Int {
         switch self {
+        case .somethingWentWrong:
+            return -1
         case .alreadySignedIn:
             return 0
         case .noUid:
@@ -48,8 +52,10 @@ extension FirebaseError {
             return 9
         case .noLastDocumentSnapshot:
             return 10
-        case .somethingWentWrong:
+        case .noQueryItemValuesFirstValue:
             return 11
+        case .noQueryItemValues:
+            return 12
         case .custom(description: _, code: let code):
             return code
         }
@@ -59,6 +65,8 @@ extension FirebaseError {
 extension FirebaseError: CustomStringConvertible {
     public var description: String {
         switch self {
+        case .somethingWentWrong:
+            return "Something went wrong"
         case .alreadySignedIn:
             return "Already signed in"
         case .noUid:
@@ -81,8 +89,10 @@ extension FirebaseError: CustomStringConvertible {
             return "No data"
         case .noLastDocumentSnapshot:
             return "No last document snapshot"
-        case .somethingWentWrong:
-            return "Something went wrong"
+        case .noQueryItemValuesFirstValue:
+            return "No query item values first value"
+        case .noQueryItemValues:
+            return "No query item values"
         case .custom(description: let description, code: _):
             return description
         }
@@ -92,6 +102,8 @@ extension FirebaseError: CustomStringConvertible {
 extension FirebaseError: LocalizedError {
     public var errorDescription: String? {
         switch self {
+        case .somethingWentWrong:
+            return NSLocalizedString("Something went wrong.", comment: "Something went wrong")
         case .alreadySignedIn:
             return NSLocalizedString("Already signed in.", comment: "Already signed in")
         case .noUid:
@@ -114,8 +126,10 @@ extension FirebaseError: LocalizedError {
             return NSLocalizedString("No data.", comment: "No data")
         case .noLastDocumentSnapshot:
             return NSLocalizedString("No last document snapshot.", comment: "No last document snapshot")
-        case .somethingWentWrong:
-            return NSLocalizedString("Something went wrong.", comment: "Something went wrong")
+        case .noQueryItemValuesFirstValue:
+            return NSLocalizedString("No query item values first value.", comment: "No query item values first value")
+        case .noQueryItemValues:
+            return NSLocalizedString("No query item values.", comment: "No query item values")
         case .custom(description: let description, code: _):
             return NSLocalizedString(description, comment: description)
         }
