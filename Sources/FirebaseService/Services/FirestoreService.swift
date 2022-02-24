@@ -120,49 +120,7 @@ public class FirestoreService<T: Codable & Firestorable> {
     public static func query(path: String, queryItems: [QueryItem]? = nil, queryLimit: QueryLimit? = nil) -> Future<[T], Error> {
         
         var query: Query = Firestore.firestore().collection(path)
-        
-        if queryItems != nil {
-            queryItems!.forEach { queryItem in
-                
-                let key = queryItem.key
-                let type = queryItem.type
-                let values = queryItem.values
-                
-                guard let value = values.first else { return }
-                
-                switch type {
-                case .isEqualTo:
-                    query = query.whereField(key, isEqualTo: value)
-                    
-                case .isNotEqualTo:
-                    query = query.whereField(key, isNotEqualTo: value)
-                    
-                case .isLessThan:
-                    query = query.whereField(key, isLessThan: value)
-                    
-                case .isLessThanOrEqualTo:
-                    query = query.whereField(key, isLessThanOrEqualTo: value)
-                    
-                case .isGreaterThan:
-                    query = query.whereField(key, isGreaterThan: value)
-                    
-                case .isGreaterThanOrEqualTo:
-                    query = query.whereField(key, isGreaterThanOrEqualTo: value)
-                    
-                case .arrayContains:
-                    query = query.whereField(key, arrayContains: values)
-                    
-                case .arrayContainsAny:
-                    query = query.whereField(key, arrayContainsAny: values)
-                    
-                case .in:
-                    query = query.whereField(key, in: values)
-                    
-                case .notIn:
-                    query = query.whereField(key, notIn: values)
-                }
-            }
-        }
+        query = add(queryItems: queryItems, to: query)
         
         if queryLimit != nil {
             let queryLimit = queryLimit!
@@ -184,6 +142,12 @@ public class FirestoreService<T: Codable & Firestorable> {
     
     public static func listen(to query: Query) -> PassthroughSubject<[T], Error> {
         FirestoreDecoder<T>.listen(to: query)
+    }
+    
+    public static func listenTo(_ path: String, queryItems: [QueryItem]? = nil) -> PassthroughSubject<[T], Error> {
+        var query: Query = Firestore.firestore().collection(path)
+        query = add(queryItems: queryItems, to: query)
+        return FirestoreDecoder<T>.listen(to: query)
     }
     
     public static func createIfNonExistent(_ document: T, withUid uid: String, atPath path: String) -> Future<T, Error> {
@@ -224,5 +188,42 @@ public class FirestoreService<T: Codable & Firestorable> {
         }
     }
     
+    private static func add(queryItems: [QueryItem]?, to query: Query) -> Query {
+        var query = query
+        if queryItems != nil {
+            queryItems!.forEach { queryItem in
+                
+                let key = queryItem.key
+                let type = queryItem.type
+                let values = queryItem.values
+                
+                guard let value = values.first else { return }
+                
+                switch type {
+                case .isEqualTo:
+                    query = query.whereField(key, isEqualTo: value)
+                case .isNotEqualTo:
+                    query = query.whereField(key, isNotEqualTo: value)
+                case .isLessThan:
+                    query = query.whereField(key, isLessThan: value)
+                case .isLessThanOrEqualTo:
+                    query = query.whereField(key, isLessThanOrEqualTo: value)
+                case .isGreaterThan:
+                    query = query.whereField(key, isGreaterThan: value)
+                case .isGreaterThanOrEqualTo:
+                    query = query.whereField(key, isGreaterThanOrEqualTo: value)
+                case .arrayContains:
+                    query = query.whereField(key, arrayContains: values)
+                case .arrayContainsAny:
+                    query = query.whereField(key, arrayContainsAny: values)
+                case .in:
+                    query = query.whereField(key, in: values)
+                case .notIn:
+                    query = query.whereField(key, notIn: values)
+                }
+            }
+        }
+        return query
+    }
+    
 }
-
