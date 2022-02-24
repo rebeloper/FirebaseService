@@ -16,9 +16,17 @@ public enum QueryItemType {
 }
 
 public struct QueryItem {
-    let type: QueryItemType
-    let key: String
-    let value: Any
+    public let key: String
+    public let type: QueryItemType
+    public let value: Any
+    
+    public init(key: String,
+                type: QueryItemType,
+                value: Any) {
+        self.key = key
+        self.type = type
+        self.value = value
+    }
 }
 
 public class FirestoreService<T: Codable & Firestorable> {
