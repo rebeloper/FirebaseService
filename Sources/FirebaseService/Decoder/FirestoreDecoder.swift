@@ -20,13 +20,7 @@ public struct FirestoreDecoder<T: Codable> {
         }
     }
     
-    public static func getCodables(for query: Query) -> Future<[T], Error> {
-        return Future<[T], Error> { completion in
-            getDocuments(query: query, completion: completion)
-        }
-    }
-    
-    public static func getCodables(for query: Query, lastDocumentSnapshot: Binding<DocumentSnapshot?>) -> Future<[T], Error> {
+    public static func getCodables(for query: Query, lastDocumentSnapshot: Binding<DocumentSnapshot?>? = nil) -> Future<[T], Error> {
         return Future<[T], Error> { completion in
             getDocuments(query: query, lastDocumentSnapshot: lastDocumentSnapshot, completion: completion)
         }
@@ -95,7 +89,7 @@ public struct FirestoreDecoder<T: Codable> {
         }
     }
     
-    public static func getDocuments(query: Query, completion: @escaping (Result<[T], Error>) -> ()) {
+    public static func getDocuments(query: Query, lastDocumentSnapshot: Binding<DocumentSnapshot?>? = nil, completion: @escaping (Result<[T], Error>) -> ()) {
         query.getDocuments { (querySnapshot, err) in
             if let err = err {
                 completion(.failure(err))
@@ -106,28 +100,13 @@ public struct FirestoreDecoder<T: Codable> {
                 return
             }
             
-            let documents = querySnapshot.documents.compactMap { document in
-                try? document.data(as: T.self)
+            if lastDocumentSnapshot != nil {
+                guard let lastDocumentSnap = querySnapshot.documents.last else {
+                    completion(.failure(FirebaseError.noLastDocumentSnapshot))
+                    return
+                }
+                lastDocumentSnapshot!.wrappedValue = lastDocumentSnap
             }
-            completion(.success(documents))
-        }
-    }
-    
-    public static func getDocuments(query: Query, lastDocumentSnapshot: Binding<DocumentSnapshot?>, completion: @escaping (Result<[T], Error>) -> ()) {
-        query.getDocuments { (querySnapshot, err) in
-            if let err = err {
-                completion(.failure(err))
-                return
-            }
-            guard let querySnapshot = querySnapshot else {
-                completion(.failure(FirebaseError.noQuerySnapshot))
-                return
-            }
-            guard let lastDocumentSnap = querySnapshot.documents.last else {
-                completion(.failure(FirebaseError.noLastDocumentSnapshot))
-                return
-            }
-            lastDocumentSnapshot.wrappedValue = lastDocumentSnap
             
             let documents = querySnapshot.documents.compactMap { document in
                 try? document.data(as: T.self)
