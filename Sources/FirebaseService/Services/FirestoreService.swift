@@ -11,6 +11,16 @@ import FirebaseFirestoreSwift
 import Combine
 import SwiftUI
 
+public enum QueryItemType {
+    case isEqualTo
+}
+
+public struct QueryItem {
+    let type: QueryItemType
+    let key: String
+    let value: Any
+}
+
 public class FirestoreService<T: Codable & Firestorable> {
     
     //CRUDQL
@@ -74,7 +84,7 @@ public class FirestoreService<T: Codable & Firestorable> {
         FirestoreDecoder<T>.getCodables(for: query)
     }
     
-    public static func query(_ query: Query, limit: Int, orderBy: String, descending: Bool, lastDocumentSnapshot: Binding<DocumentSnapshot?>) -> Future<[T], Error> {
+    public static func query(baseQuery query: Query, limit: Int, orderBy: String, descending: Bool, lastDocumentSnapshot: Binding<DocumentSnapshot?>) -> Future<[T], Error> {
         var theQuery = query
         if lastDocumentSnapshot.wrappedValue != nil {
             theQuery = query
@@ -89,19 +99,22 @@ public class FirestoreService<T: Codable & Firestorable> {
         return FirestoreDecoder<T>.getCodables(for: theQuery, lastDocumentSnapshot: lastDocumentSnapshot)
     }
     
-    public static func query(_ query: Query, whereField: String, isEqualTo: Any, limit: Int, orderBy: String, descending: Bool, lastDocumentSnapshot: Binding<DocumentSnapshot?>) -> Future<[T], Error> {
+    public static func query(baseQuery query: Query, queryItem: QueryItem, limit: Int, orderBy: String, descending: Bool, lastDocumentSnapshot: Binding<DocumentSnapshot?>) -> Future<[T], Error> {
         var theQuery = query
-        if lastDocumentSnapshot.wrappedValue != nil {
-            theQuery = query
-                .whereField(whereField, isEqualTo: isEqualTo)
-                .limit(to: limit)
-                .order(by: orderBy, descending: descending)
-                .start(afterDocument: lastDocumentSnapshot.wrappedValue!)
-        } else {
-            theQuery = query
-                .whereField(whereField, isEqualTo: isEqualTo)
-                .limit(to: limit)
-                .order(by: orderBy, descending: descending)
+        switch queryItem.type {
+        case .isEqualTo:
+            if lastDocumentSnapshot.wrappedValue != nil {
+                theQuery = query
+                    .whereField(queryItem.key, isEqualTo: queryItem.value)
+                    .limit(to: limit)
+                    .order(by: orderBy, descending: descending)
+                    .start(afterDocument: lastDocumentSnapshot.wrappedValue!)
+            } else {
+                theQuery = query
+                    .whereField(queryItem.key, isEqualTo: queryItem.value)
+                    .limit(to: limit)
+                    .order(by: orderBy, descending: descending)
+            }
         }
         return FirestoreDecoder<T>.getCodables(for: theQuery, lastDocumentSnapshot: lastDocumentSnapshot)
     }
