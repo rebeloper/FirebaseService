@@ -50,7 +50,7 @@ public class StorageService {
         }
     }
     
-    public static func handleDataChange(newData: Data, folderPath: String, compressionQuality: CGFloat, oldDataUrl: String, completion: @escaping (Result<URL, Error>) -> ()) {
+    public static func handleDataChange(newData: Data, folderPath: String, oldDataUrl: String, completion: @escaping (Result<URL, Error>) -> ()) {
         guard oldDataUrl.contains("https") else {
             print("StorageService: Old data url does not contain https. No data to delete")
             save(data: newData, folderPath: folderPath, completion: completion)
@@ -265,9 +265,9 @@ public class StorageService {
     }
     
     @MainActor
-    public static func handleDataChange(newData: Data, folderPath: String, compressionQuality: CGFloat, oldDataUrl: String, completion: @escaping (Result<URL, Error>) -> ()) async throws -> URL {
+    public static func handleDataChange(newData: Data, folderPath: String, oldDataUrl: String) async throws -> URL {
         try await withCheckedThrowingContinuation({ continuation in
-            handleDataChange(newData: newData, folderPath: folderPath, compressionQuality: compressionQuality, oldDataUrl: oldDataUrl) { result in
+            handleDataChange(newData: newData, folderPath: folderPath, oldDataUrl: oldDataUrl) { result in
                 switch result {
                 case .success(let url):
                     continuation.resume(returning: url)
