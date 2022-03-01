@@ -78,12 +78,11 @@ public struct FirestoreDecoder<T: Codable> {
             }
             switch result {
             case .success(let object):
-                completion(.success(object))
-//                if let object = object {
-//                    completion(.success(object))
-//                } else {
-//                    completion(.failure(FirebaseError.documentDoesNotExist))
-//                }
+                if let object = object {
+                    completion(.success(object))
+                } else {
+                    completion(.failure(FirebaseError.documentDoesNotExist))
+                }
             case .failure(let err):
                 completion(.failure(err))
             }
