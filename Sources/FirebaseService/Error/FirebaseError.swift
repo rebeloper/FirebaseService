@@ -20,8 +20,6 @@ public enum FirebaseError: Error {
     case noUrl
     case noData
     case noLastDocumentSnapshot
-    case noQueryItemValuesFirstValue
-    case noQueryItemValues
     case custom(description: String, code: Int)
 }
 
