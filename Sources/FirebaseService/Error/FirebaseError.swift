@@ -52,10 +52,6 @@ extension FirebaseError {
             return 9
         case .noLastDocumentSnapshot:
             return 10
-        case .noQueryItemValuesFirstValue:
-            return 11
-        case .noQueryItemValues:
-            return 12
         case .custom(description: _, code: let code):
             return code
         }
@@ -89,10 +85,6 @@ extension FirebaseError: CustomStringConvertible {
             return "No data"
         case .noLastDocumentSnapshot:
             return "No last document snapshot"
-        case .noQueryItemValuesFirstValue:
-            return "No query item values first value"
-        case .noQueryItemValues:
-            return "No query item values"
         case .custom(description: let description, code: _):
             return description
         }
@@ -126,10 +118,6 @@ extension FirebaseError: LocalizedError {
             return NSLocalizedString("No data.", comment: "No data")
         case .noLastDocumentSnapshot:
             return NSLocalizedString("No last document snapshot.", comment: "No last document snapshot")
-        case .noQueryItemValuesFirstValue:
-            return NSLocalizedString("No query item values first value.", comment: "No query item values first value")
-        case .noQueryItemValues:
-            return NSLocalizedString("No query item values.", comment: "No query item values")
         case .custom(description: let description, code: _):
             return NSLocalizedString(description, comment: description)
         }
