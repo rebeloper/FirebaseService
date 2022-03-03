@@ -20,6 +20,7 @@ public enum FirebaseError: Error {
     case noUrl
     case noData
     case noLastDocumentSnapshot
+    case noLastDocument
     case custom(description: String, code: Int)
 }
 
@@ -50,6 +51,8 @@ extension FirebaseError {
             return 9
         case .noLastDocumentSnapshot:
             return 10
+        case .noLastDocument:
+            return 11
         case .custom(description: _, code: let code):
             return code
         }
@@ -83,6 +86,8 @@ extension FirebaseError: CustomStringConvertible {
             return "No data"
         case .noLastDocumentSnapshot:
             return "No last document snapshot"
+        case .noLastDocument:
+            return "No last document"
         case .custom(description: let description, code: _):
             return description
         }
@@ -116,6 +121,8 @@ extension FirebaseError: LocalizedError {
             return NSLocalizedString("No data.", comment: "No data")
         case .noLastDocumentSnapshot:
             return NSLocalizedString("No last document snapshot.", comment: "No last document snapshot")
+        case .noLastDocument:
+            return NSLocalizedString("No last document.", comment: "No last document")
         case .custom(description: let description, code: _):
             return NSLocalizedString(description, comment: description)
         }

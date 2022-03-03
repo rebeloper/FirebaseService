@@ -101,11 +101,11 @@ public struct FirestoreDecoder<T: Codable> {
             }
             
             if lastDocumentSnapshot != nil {
-                guard let lastDocumentSnap = querySnapshot.documents.last else {
+                guard let lastDocument = querySnapshot.documents.last else {
                     completion(.failure(FirebaseError.noLastDocumentSnapshot))
                     return
                 }
-                lastDocumentSnapshot!.wrappedValue = lastDocumentSnap
+                lastDocumentSnapshot!.wrappedValue = lastDocument
             }
             
             let documents = querySnapshot.documents.compactMap { document in
