@@ -27,9 +27,9 @@ public class AuthState: ObservableObject {
         let promise = AuthListener.listen()
         promise.sink { _ in } receiveValue: { result in
             self.user = result.user
-            self.value = result.user != nil ? .authenticated : .notAuthenticated
             self.currentUserUid = result.user?.uid
             self.email = result.user?.email ?? ""
+            self.value = result.user != nil ? .authenticated : .notAuthenticated
         }.store(in: &cancellables)
     }
     
