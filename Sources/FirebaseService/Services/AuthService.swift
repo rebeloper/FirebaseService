@@ -14,103 +14,38 @@ public struct AuthService {
         Auth.auth().currentUser?.uid
     }
     
-    public static func logout() -> Future<Bool, Error> {
-        return Future<Bool, Error> { completion in
+    @discardableResult
+    public static func signIn(withEmail email: String, password: String) async throws -> AuthDataResult {
+        if Auth.auth().currentUser == nil {
+            return try await Auth.auth().signIn(withEmail: email, password: password)
+        } else {
+            throw FirebaseError.alreadySignedIn
+        }
+    }
+    
+    @discardableResult
+    public static func signUp(withEmail email: String, password: String) async throws -> AuthDataResult {
+        if Auth.auth().currentUser == nil {
+            return try await Auth.auth().createUser(withEmail: email, password: password)
+        } else {
+            throw FirebaseError.alreadySignedIn
+        }
+    }
+    
+    @discardableResult
+    public static func login(withEmail email: String, password: String) async throws -> AuthDataResult {
+        if Auth.auth().currentUser == nil {
             do {
-                try Auth.auth().signOut()
-                completion(.success(true))
+                return try await Auth.auth().signIn(withEmail: email, password: password)
             } catch {
-                completion(.failure(error))
+                if error._code == 17011 {
+                    return try await Auth.auth().createUser(withEmail: email, password: password)
+                } else {
+                    throw error
+                }
             }
+        } else {
+            throw FirebaseError.alreadySignedIn
         }
     }
-    
-    public static func signIn(withEmail email: String, password: String) -> Future<AuthDataResult, Error> {
-        return Future<AuthDataResult, Error> { completion in
-            if Auth.auth().currentUser == nil {
-                Auth.auth().signIn(withEmail: email, password: password) { (authDataResult, error) in
-                    if let error = error {
-                        completion(.failure(error))
-                        return
-                    }
-                    guard let authDataResult = authDataResult else {
-                        completion(.failure(FirebaseError.noAuthDataResult))
-                        return
-                    }
-                    completion(.success(authDataResult))
-                }
-            } else {
-                completion(.failure(FirebaseError.alreadySignedIn))
-            }
-        }
-    }
-    
-    public static func signUp(withEmail email: String, password: String) -> Future<AuthDataResult, Error> {
-        return Future<AuthDataResult, Error> { completion in
-            if Auth.auth().currentUser == nil {
-                Auth.auth().createUser(withEmail: email, password: password) { (authDataResult, error) in
-                    if let error = error {
-                        completion(.failure(error))
-                        return
-                    }
-                    guard let authDataResult = authDataResult else {
-                        completion(.failure(FirebaseError.noAuthDataResult))
-                        return
-                    }
-                    completion(.success(authDataResult))
-                }
-            } else {
-                completion(.failure(FirebaseError.alreadySignedIn))
-            }
-        }
-    }
-    
-    public static func sendResetPassword(toEmail email: String) -> Future<Bool, Error> {
-        return Future<Bool, Error> { completion in
-            Auth.auth().sendPasswordReset(withEmail: email) { (error) in
-                if let error = error {
-                    completion(.failure(error))
-                    return
-                }
-                completion(.success(true))
-            }
-        }
-    }
-    
-    public static func updateEmail(to email: String) -> Future<Bool, Error> {
-        return Future<Bool, Error> { completion in
-            Auth.auth().currentUser?.updateEmail(to: email, completion: { error in
-                if let error = error {
-                    completion(.failure(error))
-                    return
-                }
-                completion(.success(true))
-            })
-        }
-    }
-    
-    public static func updatePassword(to password: String) -> Future<Bool, Error> {
-        return Future<Bool, Error> { completion in
-            Auth.auth().currentUser?.updatePassword(to: password, completion: { error in
-                if let error = error {
-                    completion(.failure(error))
-                    return
-                }
-                completion(.success(true))
-            })
-        }
-    }
-    
-    public static func updatePhone(to phoneNumber: PhoneAuthCredential) -> Future<Bool, Error> {
-        return Future<Bool, Error> { completion in
-            Auth.auth().currentUser?.updatePhoneNumber(phoneNumber, completion: { error in
-                if let error = error {
-                    completion(.failure(error))
-                    return
-                }
-                completion(.success(true))
-            })
-        }
-    }
-    
 }

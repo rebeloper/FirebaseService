@@ -6,7 +6,8 @@
 //
 
 import Combine
-import Firebase
+import FirebaseCore
+import FirebaseAuth
 
 public class AuthState: ObservableObject {
     
@@ -35,19 +36,15 @@ public class AuthState: ObservableObject {
     
     private func logoutIfNeeded(_ shouldLogoutUponLaunch: Bool) {
         if shouldLogoutUponLaunch {
-            print("AuthState: logging out upon launch...")
-            let promise = AuthService.logout()
-            promise.sink { result in
-                switch result {
-                case .finished:
-                    break
-                case .failure(let err):
-                    print(err.localizedDescription)
+            Task {
+                print("AuthState: logging out upon launch...")
+                do {
+                    try Auth.auth().signOut()
+                    print("Logged out")
+                } catch {
+                    print(error.localizedDescription)
                 }
-            } receiveValue: { success in
-                print("Logged out: \(success)")
-            }.store(in: &cancellables)
-
+            }
         }
     }
 }
