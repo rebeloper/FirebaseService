@@ -30,6 +30,7 @@ let package = Package(
                 .product(name: "FirebaseFirestore", package: "Firebase"),
                 .product(name: "FirebaseFirestoreSwift", package: "Firebase"),
                 .product(name: "FirebaseStorage", package: "Firebase"),
+                .product(name: "FirebaseFunctions", package: "Firebase"),
                 "BetterCodable"
             ]),
         .testTarget(
