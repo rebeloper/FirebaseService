@@ -21,6 +21,7 @@ public enum FirebaseError: Error {
     case noData
     case noLastDocumentSnapshot
     case noLastDocument
+    case failedToDeleteAsset
     case custom(description: String, code: Int)
 }
 
@@ -53,6 +54,8 @@ extension FirebaseError {
             return 10
         case .noLastDocument:
             return 11
+        case .failedToDeleteAsset:
+            return 12
         case .custom(description: _, code: let code):
             return code
         }
@@ -88,6 +91,8 @@ extension FirebaseError: CustomStringConvertible {
             return "No last document snapshot"
         case .noLastDocument:
             return "No last document"
+        case .failedToDeleteAsset:
+            "Failed to delete asset"
         case .custom(description: let description, code: _):
             return description
         }
@@ -123,6 +128,8 @@ extension FirebaseError: LocalizedError {
             return NSLocalizedString("No last document snapshot.", comment: "No last document snapshot")
         case .noLastDocument:
             return NSLocalizedString("No last document.", comment: "No last document")
+        case .failedToDeleteAsset:
+            return NSLocalizedString("Failed to delete asset.", comment: "Failed to delete asset")
         case .custom(description: let description, code: _):
             return NSLocalizedString(description, comment: description)
         }

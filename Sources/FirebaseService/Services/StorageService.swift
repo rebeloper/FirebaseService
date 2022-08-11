@@ -43,7 +43,11 @@ public class StorageService {
             switch result {
             case .success(let objectFound):
                 print("StorageService: Object to be deleted was found: \(objectFound)")
-                save(image: newImage, folderPath: folderPath, compressionQuality: compressionQuality, completion: completion)
+                if objectFound {
+                    save(image: newImage, folderPath: folderPath, compressionQuality: compressionQuality, completion: completion)
+                } else {
+                    completion(.failure(FirebaseError.failedToDeleteAsset))
+                }
             case .failure(let err):
                 completion(.failure(err))
             }
@@ -60,7 +64,11 @@ public class StorageService {
             switch result {
             case .success(let objectFound):
                 print("StorageService: Object to be deleted was found: \(objectFound)")
-                save(data: newData, folderPath: folderPath, completion: completion)
+                if objectFound {
+                    save(data: newData, folderPath: folderPath, completion: completion)
+                } else {
+                    completion(.failure(FirebaseError.failedToDeleteAsset))
+                }
             case .failure(let err):
                 completion(.failure(err))
             }
