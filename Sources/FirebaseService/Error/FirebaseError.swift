@@ -92,7 +92,7 @@ extension FirebaseError: CustomStringConvertible {
         case .noLastDocument:
             return "No last document"
         case .failedToDeleteAsset:
-            "Failed to delete asset"
+            return "Failed to delete asset"
         case .custom(description: let description, code: _):
             return description
         }
