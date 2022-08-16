@@ -18,14 +18,6 @@ public class StorageService {
         save(data: imageData, folderPath: folderPath, completion: completion)
     }
     
-    public static func put(image: UIImage, folderPath: String, compressionQuality: CGFloat, completion: @escaping (Result<String, Error>) -> ()) {
-        guard let imageData = image.jpegData(compressionQuality: compressionQuality) else {
-            completion(.failure(FirebaseError.noImageAvailable))
-            return
-        }
-        put(data: imageData, folderPath: folderPath, completion: completion)
-    }
-    
     public static func delete(at url: String, completion: @escaping (Result<Bool, Error>) -> ()) {
         let imageReference = Storage.storage().reference(forURL: url)
         imageReference.delete { (err) in
@@ -62,27 +54,6 @@ public class StorageService {
         }
     }
     
-    public static func put(newImage: UIImage, folderPath: String, compressionQuality: CGFloat, oldImageUrl: String, completion: @escaping (Result<String, Error>) -> ()) {
-        guard oldImageUrl.contains("https") else {
-            print("StorageService: Old image url does not contain https. No image to delete")
-            put(image: newImage, folderPath: folderPath, compressionQuality: compressionQuality, completion: completion)
-            return
-        }
-        delete(at: oldImageUrl) { (result) in
-            switch result {
-            case .success(let objectFound):
-                print("StorageService: Object to be deleted was found: \(objectFound)")
-                if objectFound {
-                    put(image: newImage, folderPath: folderPath, compressionQuality: compressionQuality, completion: completion)
-                } else {
-                    completion(.failure(FirebaseError.failedToDeleteAsset))
-                }
-            case .failure(let err):
-                completion(.failure(err))
-            }
-        }
-    }
-    
     public static func handleDataChange(newData: Data, folderPath: String, oldDataUrl: String, completion: @escaping (Result<URL, Error>) -> ()) {
         guard oldDataUrl.contains("https") else {
             print("StorageService: Old data url does not contain https. No data to delete")
@@ -95,27 +66,6 @@ public class StorageService {
                 print("StorageService: Object to be deleted was found: \(objectFound)")
                 if objectFound {
                     save(data: newData, folderPath: folderPath, completion: completion)
-                } else {
-                    completion(.failure(FirebaseError.failedToDeleteAsset))
-                }
-            case .failure(let err):
-                completion(.failure(err))
-            }
-        }
-    }
-    
-    public static func put(newData: Data, folderPath: String, oldDataUrl: String, completion: @escaping (Result<String, Error>) -> ()) {
-        guard oldDataUrl.contains("https") else {
-            print("StorageService: Old data url does not contain https. No data to delete")
-            put(data: newData, folderPath: folderPath, completion: completion)
-            return
-        }
-        delete(at: oldDataUrl) { (result) in
-            switch result {
-            case .success(let objectFound):
-                print("StorageService: Object to be deleted was found: \(objectFound)")
-                if objectFound {
-                    put(data: newData, folderPath: folderPath, completion: completion)
                 } else {
                     completion(.failure(FirebaseError.failedToDeleteAsset))
                 }
@@ -151,23 +101,6 @@ public class StorageService {
                 completion(.success(url))
             }
             
-        }
-    }
-    
-    public static func put(data: Data, folderPath: String, completion: @escaping (Result<String, Error>) -> ()) {
-        
-        let fileName = UUID().uuidString
-        
-        let reference = Storage.storage().reference()
-            .child(folderPath)
-            .child(fileName)
-        
-        reference.putData(data, metadata: nil) { (metadata, err) in
-            if let err = err {
-                completion(.failure(err))
-                return
-            }
-            completion(.success(reference.description))
         }
     }
     
@@ -311,20 +244,6 @@ public class StorageService {
     }
     
     @MainActor
-    public static func put(image: UIImage, folderPath: String, compressionQuality: CGFloat) async throws -> String {
-        try await withCheckedThrowingContinuation({ continuation in
-            put(image: image, folderPath: folderPath, compressionQuality: compressionQuality) { result in
-                switch result {
-                case .success(let url):
-                    continuation.resume(returning: url)
-                case .failure(let err):
-                    continuation.resume(throwing: err)
-                }
-            }
-        })
-    }
-    
-    @MainActor
     @discardableResult
     public static func delete(at url: String) async throws -> Bool {
         try await withCheckedThrowingContinuation({ continuation in
@@ -354,20 +273,6 @@ public class StorageService {
     }
     
     @MainActor
-    public static func put(newImage: UIImage, folderPath: String, compressionQuality: CGFloat, oldImageUrl: String) async throws -> String {
-        try await withCheckedThrowingContinuation({ continuation in
-            put(newImage: newImage, folderPath: folderPath, compressionQuality: compressionQuality, oldImageUrl: oldImageUrl) { result in
-                switch result {
-                case .success(let url):
-                    continuation.resume(returning: url)
-                case .failure(let err):
-                    continuation.resume(throwing: err)
-                }
-            }
-        })
-    }
-    
-    @MainActor
     public static func handleDataChange(newData: Data, folderPath: String, oldDataUrl: String) async throws -> URL {
         try await withCheckedThrowingContinuation({ continuation in
             handleDataChange(newData: newData, folderPath: folderPath, oldDataUrl: oldDataUrl) { result in
@@ -382,37 +287,9 @@ public class StorageService {
     }
     
     @MainActor
-    public static func put(newData: Data, folderPath: String, oldDataUrl: String) async throws -> String {
-        try await withCheckedThrowingContinuation({ continuation in
-            put(newData: newData, folderPath: folderPath, oldDataUrl: oldDataUrl) { result in
-                switch result {
-                case .success(let url):
-                    continuation.resume(returning: url)
-                case .failure(let err):
-                    continuation.resume(throwing: err)
-                }
-            }
-        })
-    }
-    
-    @MainActor
     public static func save(data: Data, folderPath: String) async throws -> URL {
         try await withCheckedThrowingContinuation({ continuation in
             save(data: data, folderPath: folderPath) { result in
-                switch result {
-                case .success(let url):
-                    continuation.resume(returning: url)
-                case .failure(let err):
-                    continuation.resume(throwing: err)
-                }
-            }
-        })
-    }
-    
-    @MainActor
-    public static func put(data: Data, folderPath: String) async throws -> String {
-        try await withCheckedThrowingContinuation({ continuation in
-            put(data: data, folderPath: folderPath) { result in
                 switch result {
                 case .success(let url):
                     continuation.resume(returning: url)
