@@ -35,7 +35,7 @@ public class StorageService {
     
     public static func handleImageChange(newImage: UIImage, folderPath: String, compressionQuality: CGFloat, oldImageUrl: String, completion: @escaping (Result<URL, Error>) -> ()) {
         guard oldImageUrl.contains("https") else {
-            print("StorageService: Old image url does not contain https. No image to delete")
+            print("StorageService: Old image url does not contain https. No old image to delete. Saving new image...")
             save(image: newImage, folderPath: folderPath, compressionQuality: compressionQuality, completion: completion)
             return
         }
@@ -56,7 +56,7 @@ public class StorageService {
     
     public static func handleDataChange(newData: Data, folderPath: String, oldDataUrl: String, completion: @escaping (Result<URL, Error>) -> ()) {
         guard oldDataUrl.contains("https") else {
-            print("StorageService: Old data url does not contain https. No data to delete")
+            print("StorageService: Old data url does not contain https. No old data to delete. Saving new data...")
             save(data: newData, folderPath: folderPath, completion: completion)
             return
         }
