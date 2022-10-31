@@ -38,20 +38,34 @@ public struct QueryItem {
     }
 }
 
-public struct QueryLimit {
+public struct QueryPagedLimit {
     public var limit: Int
     public var orderBy: String
     public var descending: Bool
     @Binding public var lastDocumentSnapshot: DocumentSnapshot?
     
     public init(limit: Int,
-         orderBy: String,
-         descending: Bool,
-         lastDocumentSnapshot: Binding<DocumentSnapshot?>) {
+                orderBy: String,
+                descending: Bool,
+                lastDocumentSnapshot: Binding<DocumentSnapshot?>) {
         self.limit = limit
         self.orderBy = orderBy
         self.descending = descending
         self._lastDocumentSnapshot = lastDocumentSnapshot
+    }
+}
+
+public struct QueryLimit {
+    public var limit: Int
+    public var orderBy: String
+    public var descending: Bool
+    
+    public init(limit: Int,
+                orderBy: String,
+                descending: Bool) {
+        self.limit = limit
+        self.orderBy = orderBy
+        self.descending = descending
     }
 }
 
@@ -118,6 +132,24 @@ public class FirestoreService<T: Codable & Firestorable> {
         FirestoreDecoder<T>.getCodables(for: query)
     }
     
+    public static func query(path: String, queryItems: [QueryItem]? = nil, queryPagedLimit: QueryPagedLimit) -> Future<[T], Error> {
+        
+        var query: Query = Firestore.firestore().collection(path)
+        query = add(queryItems: queryItems, to: query)
+        
+        if queryPagedLimit.lastDocumentSnapshot != nil {
+            query = query
+                .limit(to: queryPagedLimit.limit)
+                .order(by: queryPagedLimit.orderBy, descending: queryPagedLimit.descending)
+                .start(afterDocument: queryPagedLimit.lastDocumentSnapshot!)
+        } else {
+            query = query
+                .limit(to: queryPagedLimit.limit)
+                .order(by: queryPagedLimit.orderBy, descending: queryPagedLimit.descending)
+        }
+        return FirestoreDecoder<T>.getCodables(for: query, lastDocumentSnapshot: queryPagedLimit.$lastDocumentSnapshot)
+    }
+    
     public static func query(path: String, queryItems: [QueryItem]? = nil, queryLimit: QueryLimit? = nil) -> Future<[T], Error> {
         
         var query: Query = Firestore.firestore().collection(path)
@@ -125,17 +157,10 @@ public class FirestoreService<T: Codable & Firestorable> {
         
         if queryLimit != nil {
             let queryLimit = queryLimit!
-            if queryLimit.lastDocumentSnapshot != nil {
-                query = query
-                    .limit(to: queryLimit.limit)
-                    .order(by: queryLimit.orderBy, descending: queryLimit.descending)
-                    .start(afterDocument: queryLimit.lastDocumentSnapshot!)
-            } else {
-                query = query
-                    .limit(to: queryLimit.limit)
-                    .order(by: queryLimit.orderBy, descending: queryLimit.descending)
-            }
-            return FirestoreDecoder<T>.getCodables(for: query, lastDocumentSnapshot: queryLimit.$lastDocumentSnapshot)
+            query = query
+                .limit(to: queryLimit.limit)
+                .order(by: queryLimit.orderBy, descending: queryLimit.descending)
+            return FirestoreDecoder<T>.getCodables(for: query)
         } else {
             return FirestoreDecoder<T>.getCodables(for: query)
         }
