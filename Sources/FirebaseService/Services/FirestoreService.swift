@@ -239,7 +239,7 @@ public class FirestoreService<T: Codable & Firestorable> {
                 case .isGreaterThanOrEqualTo:
                     query = query.whereField(key, isGreaterThanOrEqualTo: value)
                 case .arrayContains:
-                    query = query.whereField(key, arrayContains: values)
+                    query = query.whereField(key, arrayContains: value)
                 case .arrayContainsAny:
                     query = query.whereField(key, arrayContainsAny: values)
                 case .in:

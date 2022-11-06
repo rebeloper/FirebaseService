@@ -97,7 +97,7 @@ public struct FirestoreDecoder<T: Codable> {
             
             if lastDocumentSnapshot != nil {
                 guard let lastDocument = querySnapshot.documents.last else {
-                    completion(.failure(FirebaseError.noLastDocumentSnapshot))
+                    completion(.success([]))
                     return
                 }
                 lastDocumentSnapshot!.wrappedValue = lastDocument
