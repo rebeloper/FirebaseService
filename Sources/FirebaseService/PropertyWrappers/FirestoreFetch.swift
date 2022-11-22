@@ -10,6 +10,126 @@ import FirebaseFirestore
 import FirebaseFirestoreSwift
 
 /// A property wrapper that fetches a Firestore collection.
+/// 
+/// import SwiftUI
+/// import FirebaseFirestore
+/// import FirebaseService
+///
+/// struct ContentView: View {
+///
+///     @FirestorePaginatedFetch("posts", pagination: .init(orderBy: "timestamp", descending: false, limit: 3)) /// private var posts: [Post]
+/// //    @FirestoreFetch(collectionPath: "posts", predicates: [.orderBy("timestamp", false)]) private var posts: /// [Post]
+///
+///     var body: some View {
+///
+///         if let error = _posts.configuration.error {
+///             Text(error.localizedDescription)
+///                 .foregroundColor(.gray)
+///                 .font(.caption)
+///         } else {
+///             VStack {
+///                 if posts.isEmpty {
+///                     ProgressView()
+///                 } else {
+///                     List {
+///                         ForEach(posts.indices, id: \.self) { index in
+///                             let post = posts[index]
+///                             VStack(alignment: .leading) {
+///                                 Text(post.value)
+///                                 Text(post.uid)
+///                                     .font(.caption)
+///                                     .foregroundColor(.gray)
+///                                     .bold()
+///                                 Text("\(post.timestamp.dateValue().formatted(.dateTime))")
+///                                     .font(.caption)
+///                                     .foregroundColor(.gray)
+///                             }
+///                             .swipeActions(edge: .leading, allowsFullSwipe: true) {
+///                                 Button {
+///                                     update(post)
+///                                 } label: {
+///                                     Image(systemName: "pencil")
+///                                 }
+///                             }
+///                             .onAppear {
+///                                 fetchNext(index)
+///                             }
+///                         }
+///                         .onDelete(perform: delete)
+///                     }
+///                     .refreshable {
+///                         refresh()
+///                     }
+///                 }
+///             }
+///             .toolbar {
+///                 ToolbarItem {
+///                     Button {
+///                         create()
+///                     } label: {
+///                         Image(systemName: "plus")
+///                     }
+///                 }
+///             }
+///         }
+///     }
+///
+///     func delete(indexSet: IndexSet) {
+///         for index in indexSet {
+///             delete(posts[index])
+///         }
+///     }
+///
+///     func create() {
+///         do {
+///             try animated {
+///                 let post = Post(value: "New post", timestamp: Timestamp(date: Date()))
+///                 try _posts.manager.create(post, sortedBy: { p0, p1 in
+///                     p0.timestamp.dateValue() < p1.timestamp.dateValue()
+///                 })
+///             }
+///         } catch {
+///             print(error.localizedDescription)
+///         }
+///     }
+///
+///     func delete(_ post: Post) {
+///         do {
+///             try _posts.manager.delete(post)
+///         } catch {
+///             print(error.localizedDescription)
+///         }
+///     }
+///
+///     func update(_ post: Post) {
+///         var newPost = post
+///         newPost.value = "Updated post"
+///         do {
+///             try _posts.manager.update(post, with: newPost, sortedBy: { p0, p1 in
+///                 p0.timestamp.dateValue() < p1.timestamp.dateValue()
+///             })
+///         } catch {
+///             print(error.localizedDescription)
+///         }
+///     }
+///
+///     func fetchNext(_ index: Int) {
+///         if index % 3 == 0 {
+///             _posts.manager.fetch()
+///         }
+///     }
+///
+///     func refresh() {
+///         _posts.manager.refresh()
+///     }
+/// }
+///
+/// struct Post: Codable, Firestorable, Equatable {
+///     var uid = UUID().uuidString
+///     var value: String
+///     var timestamp: Timestamp
+/// }
+///
 @propertyWrapper
 public struct FirestoreFetch<T>: DynamicProperty {
     @StateObject public var manager: FirestoreFetchManager<T>
