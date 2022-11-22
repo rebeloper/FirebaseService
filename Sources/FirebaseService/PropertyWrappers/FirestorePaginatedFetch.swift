@@ -9,6 +9,7 @@ import SwiftUI
 import FirebaseFirestore
 import FirebaseFirestoreSwift
 
+/// A property wrapper that fetches a Firestore collection in a paginated way.
 @propertyWrapper
 public struct FirestorePaginatedFetch<T>: DynamicProperty {
     @StateObject public var manager: FirestorePaginatedFetchManager<T>
@@ -59,6 +60,14 @@ public struct FirestorePaginatedFetch<T>: DynamicProperty {
         }
     }
     
+    /// Creates an instance by defining a query based on the parameters.
+    /// - Parameters:
+    ///   - collectionPath: The path to the Firestore collection to query.
+    ///   - pagination: Sets the order and limit of the query.
+    ///   - predicates: An optional array of `QueryPredicate`s that defines a
+    ///     filter for the fetched results.
+    ///   - decodingFailureStrategy: The strategy to use when there is a failure
+    ///     during the decoding phase. Defaults to `DecodingFailureStrategy.raise`.
     public init<U: Decodable>(_ collectionPath: String,
                               pagination: FirestorePaginatedFetchPagination,
                               predicates: [QueryPredicate] = [],
@@ -101,17 +110,20 @@ final public class FirestorePaginatedFetchManager<T>: ObservableObject {
         fetch()
     }
     
+    /// Refreshes the value.
     public func refresh<U: Decodable>() where T == [U] {
         reset()
         fetch()
     }
     
+    /// Resets the value.
     public func reset<U: Decodable>() where T == [U] {
         didFetchAll = false
         lastDocumentSnapshot = nil
         value = []
     }
     
+    /// Fetches new values.
     public func fetch<U: Decodable>() where T == [U] {
         if didFetchAll {
             print("did fetch all")
@@ -239,18 +251,29 @@ final public class FirestorePaginatedFetchManager<T>: ObservableObject {
         }
     }
     
+    /// Creates a new element.
+    /// - Parameters:
+    ///   - element: An element to be created.
+    ///   - areInIncreasingOrder: Order of the value being fetched.
     public func create<U: Codable & Firestorable & Equatable>(_ element: U, sortedBy areInIncreasingOrder: ((U, U) throws -> Bool)? = nil) throws where T == [U] {
         try animated {
             try value.append(element, collectionPath: configuration.path, sortedBy: areInIncreasingOrder)
         }
     }
     
+    /// Deletes an element.
+    /// - Parameter element: The element to be deleted.
     public func delete<U: Codable & Firestorable & Equatable>(_ element: U) throws where T == [U] {
         try animated {
             try value.delete(element, collectionPath: configuration.path)
         }
     }
     
+    /// Updates an element.
+    /// - Parameters:
+    ///   - element: An element to be updated.
+    ///   - newElement: The updated element.
+    ///   - areInIncreasingOrder: Order of the value being fetched.
     public func update<U: Codable & Firestorable & Equatable>(_ element: U, with newElement: U, sortedBy areInIncreasingOrder: ((U, U) throws -> Bool)? = nil) throws where T == [U] {
         try animated {
             try value.update(element, with: newElement, collectionPath: configuration.path)
