@@ -124,7 +124,7 @@ import FirebaseFirestoreSwift
 ///     }
 /// }
 ///
-/// struct Post: Codable, Firestorable, Equatable {
+/// struct Post: Codable, Firestorable, Equatable,  Hashable {
 ///     var uid = UUID().uuidString
 ///     var value: String
 ///     var timestamp: Timestamp
@@ -187,9 +187,9 @@ public struct FirestoreFetch<T>: DynamicProperty {
     ///     filter for the fetched results.
     ///   - decodingFailureStrategy: The strategy to use when there is a failure
     ///     during the decoding phase. Defaults to `DecodingFailureStrategy.raise`.
-    public init<U: Decodable>(collectionPath: String,
-                              predicates: [QueryPredicate] = [],
-                              decodingFailureStrategy: DecodingFailureStrategy = .raise) where T == [U] {
+    public init<U: Decodable & Hashable>(collectionPath: String,
+                                         predicates: [QueryPredicate] = [],
+                                         decodingFailureStrategy: DecodingFailureStrategy = .raise) where T == [U] {
         let configuration = Configuration(
             path: collectionPath,
             predicates: predicates,
@@ -216,7 +216,7 @@ final public class FirestoreFetchManager<T>: ObservableObject {
         }
     }
     
-    public init<U: Decodable>(configuration: FirestoreFetch<T>.Configuration) where T == [U] {
+    public init<U: Decodable & Hashable>(configuration: FirestoreFetch<T>.Configuration) where T == [U] {
         self.value = [U]()
         self.configuration = configuration
         
@@ -224,7 +224,7 @@ final public class FirestoreFetchManager<T>: ObservableObject {
     }
     
     /// Fetches the values.
-    public func fetch<U: Decodable>() where T == [U] {
+    public func fetch<U: Decodable & Hashable>() where T == [U] {
         setupQuery = createQuery { [weak self] result in
             switch result {
             case .success(let querySnapshot):
@@ -329,15 +329,15 @@ final public class FirestoreFetchManager<T>: ObservableObject {
     /// - Parameters:
     ///   - element: An element to be created.
     ///   - areInIncreasingOrder: Order of the value being fetched.
-    public func create<U: Codable & Firestorable & Equatable>(_ element: U, sortedBy areInIncreasingOrder: ((U, U) throws -> Bool)? = nil) throws where T == [U] {
+    public func create<U: Codable & Firestorable & Equatable & Hashable>(_ element: U, sortedBy areInIncreasingOrder: ((U, U) throws -> Bool)? = nil) throws where T == [U] {
         try animated {
-            try value.append(element, collectionPath: configuration.path, appending: true, sortedBy: areInIncreasingOrder)
+            try value.append(element, collectionPath: configuration.path, sortedBy: areInIncreasingOrder)
         }
     }
     
     /// Deletes an element.
     /// - Parameter element: The element to be deleted.
-    public func delete<U: Codable & Firestorable & Equatable>(_ element: U) throws where T == [U] {
+    public func delete<U: Codable & Firestorable & Equatable & Hashable>(_ element: U) throws where T == [U] {
         try animated {
             try value.delete(element, collectionPath: configuration.path)
         }
@@ -348,7 +348,7 @@ final public class FirestoreFetchManager<T>: ObservableObject {
     ///   - element: An element to be updated.
     ///   - newElement: The updated element.
     ///   - areInIncreasingOrder: Order of the value being fetched.
-    public func update<U: Codable & Firestorable & Equatable>(_ element: U, with newElement: U, sortedBy areInIncreasingOrder: ((U, U) throws -> Bool)? = nil) throws where T == [U] {
+    public func update<U: Codable & Firestorable & Equatable & Hashable>(_ element: U, with newElement: U, sortedBy areInIncreasingOrder: ((U, U) throws -> Bool)? = nil) throws where T == [U] {
         try animated {
             try value.update(element, with: newElement, collectionPath: configuration.path)
         }

@@ -124,7 +124,7 @@ import FirebaseFirestoreSwift
 ///     }
 /// }
 ///
-/// struct Post: Codable, Firestorable, Equatable {
+/// struct Post: Codable, Firestorable, Equatable, Hashable {
 ///     var uid = UUID().uuidString
 ///     var value: String
 ///     var timestamp: Timestamp
@@ -188,10 +188,10 @@ public struct FirestorePaginatedFetch<T>: DynamicProperty {
     ///     filter for the fetched results.
     ///   - decodingFailureStrategy: The strategy to use when there is a failure
     ///     during the decoding phase. Defaults to `DecodingFailureStrategy.raise`.
-    public init<U: Decodable>(_ collectionPath: String,
-                              pagination: FirestorePaginatedFetchPagination,
-                              predicates: [QueryPredicate] = [],
-                              decodingFailureStrategy: DecodingFailureStrategy = .raise) where T == [U] {
+    public init<U: Decodable & Hashable>(_ collectionPath: String,
+                                         pagination: FirestorePaginatedFetchPagination,
+                                         predicates: [QueryPredicate] = [],
+                                         decodingFailureStrategy: DecodingFailureStrategy = .raise) where T == [U] {
         var predicates = predicates
         predicates.append(.order(by: pagination.orderBy, descending: pagination.descending))
         predicates.append(.limit(to: pagination.limit))
@@ -223,7 +223,7 @@ final public class FirestorePaginatedFetchManager<T>: ObservableObject {
         }
     }
     
-    public init<U: Decodable>(configuration: FirestorePaginatedFetch<T>.Configuration) where T == [U] {
+    public init<U: Decodable & Hashable>(configuration: FirestorePaginatedFetch<T>.Configuration) where T == [U] {
         self.value = [U]()
         self.configuration = configuration
         
@@ -231,20 +231,20 @@ final public class FirestorePaginatedFetchManager<T>: ObservableObject {
     }
     
     /// Refreshes the value.
-    public func refresh<U: Decodable>() where T == [U] {
+    public func refresh<U: Decodable & Hashable>() where T == [U] {
         reset()
         fetch()
     }
     
     /// Resets the value.
-    public func reset<U: Decodable>() where T == [U] {
+    public func reset<U: Decodable & Hashable>() where T == [U] {
         didFetchAll = false
         lastDocumentSnapshot = nil
         value = []
     }
     
     /// Fetches new values.
-    public func fetch<U: Decodable>() where T == [U] {
+    public func fetch<U: Decodable & Hashable>() where T == [U] {
         if didFetchAll {
             print("did fetch all")
             return
@@ -278,11 +278,13 @@ final public class FirestorePaginatedFetchManager<T>: ObservableObject {
                     } else {
                         withAnimation {
                             self?.value += decodedDocuments
+                            self?.value = Array((self?.value ?? []).uniqued())
                         }
                     }
                 } else {
                     withAnimation {
                         self?.value += decodedDocuments
+                        self?.value = Array((self?.value ?? []).uniqued())
                     }
                 }
                 
@@ -375,15 +377,15 @@ final public class FirestorePaginatedFetchManager<T>: ObservableObject {
     /// - Parameters:
     ///   - element: An element to be created.
     ///   - areInIncreasingOrder: Order of the value being fetched.
-    public func create<U: Codable & Firestorable & Equatable>(_ element: U, sortedBy areInIncreasingOrder: ((U, U) throws -> Bool)? = nil) throws where T == [U] {
+    public func create<U: Codable & Firestorable & Equatable & Hashable>(_ element: U, sortedBy areInIncreasingOrder: ((U, U) throws -> Bool)? = nil) throws where T == [U] {
         try animated {
-            try value.append(element, collectionPath: configuration.path, appending: false, sortedBy: areInIncreasingOrder)
+            try value.append(element, collectionPath: configuration.path, sortedBy: areInIncreasingOrder)
         }
     }
     
     /// Deletes an element.
     /// - Parameter element: The element to be deleted.
-    public func delete<U: Codable & Firestorable & Equatable>(_ element: U) throws where T == [U] {
+    public func delete<U: Codable & Firestorable & Equatable & Hashable>(_ element: U) throws where T == [U] {
         try animated {
             try value.delete(element, collectionPath: configuration.path)
         }
@@ -394,7 +396,7 @@ final public class FirestorePaginatedFetchManager<T>: ObservableObject {
     ///   - element: An element to be updated.
     ///   - newElement: The updated element.
     ///   - areInIncreasingOrder: Order of the value being fetched.
-    public func update<U: Codable & Firestorable & Equatable>(_ element: U, with newElement: U, sortedBy areInIncreasingOrder: ((U, U) throws -> Bool)? = nil) throws where T == [U] {
+    public func update<U: Codable & Firestorable & Equatable & Hashable>(_ element: U, with newElement: U, sortedBy areInIncreasingOrder: ((U, U) throws -> Bool)? = nil) throws where T == [U] {
         try animated {
             try value.update(element, with: newElement, collectionPath: configuration.path)
         }

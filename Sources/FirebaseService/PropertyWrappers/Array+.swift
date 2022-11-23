@@ -7,16 +7,15 @@
 
 import Foundation
 
-public extension Array where Element: Codable & Firestorable & Equatable {
+public extension Array where Element: Codable & Firestorable & Equatable & Hashable {
     
     @discardableResult
-    mutating func append(_ document: Element, collectionPath: String, appending: Bool, sortedBy areInIncreasingOrder: ((Element, Element) throws -> Bool)? = nil) throws -> Array  {
+    mutating func append(_ document: Element, collectionPath: String, sortedBy areInIncreasingOrder: ((Element, Element) throws -> Bool)? = nil) throws -> Array  {
         let newElement = try FirestoreViewContext.create(document, collectionPath: collectionPath)
-        if appending {
-            self.append(newElement)
-            if let areInIncreasingOrder {
-                self = try self.sorted(by: areInIncreasingOrder)
-            }
+        self.append(newElement)
+        self = Array(self.uniqued())
+        if let areInIncreasingOrder {
+            self = try self.sorted(by: areInIncreasingOrder)
         }
         return self
     }
@@ -39,4 +38,3 @@ public extension Array where Element: Codable & Firestorable & Equatable {
         return self
     }
 }
-
