@@ -278,13 +278,11 @@ final public class FirestorePaginatedFetchManager<T>: ObservableObject {
                     } else {
                         withAnimation {
                             self?.value += decodedDocuments
-                            self?.value = Array(NSOrderedSet(array: self?.value ?? []).array as! T)
                         }
                     }
                 } else {
                     withAnimation {
                         self?.value += decodedDocuments
-                        self?.value = Array(NSOrderedSet(array: self?.value ?? []).array as! T)
                     }
                 }
                 
@@ -379,7 +377,7 @@ final public class FirestorePaginatedFetchManager<T>: ObservableObject {
     ///   - areInIncreasingOrder: Order of the value being fetched.
     public func create<U: Codable & Firestorable & Equatable>(_ element: U, sortedBy areInIncreasingOrder: ((U, U) throws -> Bool)? = nil) throws where T == [U] {
         try animated {
-            try value.append(element, collectionPath: configuration.path, sortedBy: areInIncreasingOrder)
+            try value.append(element, collectionPath: configuration.path, appending: false, sortedBy: areInIncreasingOrder)
         }
     }
     
@@ -400,28 +398,5 @@ final public class FirestorePaginatedFetchManager<T>: ObservableObject {
         try animated {
             try value.update(element, with: newElement, collectionPath: configuration.path)
         }
-    }
-}
-
-extension Sequence {
-
-    /// Return the sequence with all duplicates removed.
-    ///
-    /// Duplicate, in this case, is defined as returning `true` from `comparator`.
-    ///
-    /// - note: Taken from stackoverflow.com/a/46354989/3141234
-    func uniqued(comparator: @escaping (Element, Element) throws -> Bool) rethrows -> [Element] {
-        var buffer: [Element] = []
-
-        for element in self {
-            // If element is already in buffer, skip to the next element
-            if try buffer.contains(where: { try comparator(element, $0) }) {
-                continue
-            }
-
-            buffer.append(element)
-        }
-
-        return buffer
     }
 }

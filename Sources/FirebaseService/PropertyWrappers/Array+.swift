@@ -10,11 +10,13 @@ import Foundation
 public extension Array where Element: Codable & Firestorable & Equatable {
     
     @discardableResult
-    mutating func append(_ document: Element, collectionPath: String, sortedBy areInIncreasingOrder: ((Element, Element) throws -> Bool)? = nil) throws -> Array  {
+    mutating func append(_ document: Element, collectionPath: String, appending: Bool, sortedBy areInIncreasingOrder: ((Element, Element) throws -> Bool)? = nil) throws -> Array  {
         let newElement = try FirestoreViewContext.create(document, collectionPath: collectionPath)
-        self.append(newElement)
-        if let areInIncreasingOrder {
-            self = try self.sorted(by: areInIncreasingOrder)
+        if appending {
+            self.append(newElement)
+            if let areInIncreasingOrder {
+                self = try self.sorted(by: areInIncreasingOrder)
+            }
         }
         return self
     }

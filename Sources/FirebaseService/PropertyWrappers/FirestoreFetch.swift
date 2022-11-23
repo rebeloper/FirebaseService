@@ -331,7 +331,7 @@ final public class FirestoreFetchManager<T>: ObservableObject {
     ///   - areInIncreasingOrder: Order of the value being fetched.
     public func create<U: Codable & Firestorable & Equatable>(_ element: U, sortedBy areInIncreasingOrder: ((U, U) throws -> Bool)? = nil) throws where T == [U] {
         try animated {
-            try value.append(element, collectionPath: configuration.path, sortedBy: areInIncreasingOrder)
+            try value.append(element, collectionPath: configuration.path, appending: true, sortedBy: areInIncreasingOrder)
         }
     }
     
