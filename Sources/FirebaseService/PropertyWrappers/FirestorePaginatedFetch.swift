@@ -188,10 +188,10 @@ public struct FirestorePaginatedFetch<T>: DynamicProperty {
     ///     filter for the fetched results.
     ///   - decodingFailureStrategy: The strategy to use when there is a failure
     ///     during the decoding phase. Defaults to `DecodingFailureStrategy.raise`.
-    public init<U: Decodable & Hashable & Firestorable>(_ collectionPath: String,
-                                                        pagination: FirestorePaginatedFetchPagination,
-                                                        predicates: [QueryPredicate] = [],
-                                                        decodingFailureStrategy: DecodingFailureStrategy = .raise) where T == [U] {
+    public init<U: Decodable & Firestorable>(_ collectionPath: String,
+                                             pagination: FirestorePaginatedFetchPagination,
+                                             predicates: [QueryPredicate] = [],
+                                             decodingFailureStrategy: DecodingFailureStrategy = .raise) where T == [U] {
         var predicates = predicates
         predicates.append(.order(by: pagination.orderBy, descending: pagination.descending))
         predicates.append(.limit(to: pagination.limit))
@@ -223,7 +223,7 @@ final public class FirestorePaginatedFetchManager<T>: ObservableObject {
         }
     }
     
-    public init<U: Decodable & Hashable & Firestorable>(configuration: FirestorePaginatedFetch<T>.Configuration) where T == [U] {
+    public init<U: Decodable & Firestorable>(configuration: FirestorePaginatedFetch<T>.Configuration) where T == [U] {
         self.value = [U]()
         self.configuration = configuration
         
@@ -231,20 +231,20 @@ final public class FirestorePaginatedFetchManager<T>: ObservableObject {
     }
     
     /// Refreshes the value.
-    public func refresh<U: Decodable & Hashable & Firestorable>() where T == [U] {
+    public func refresh<U: Decodable & Firestorable>() where T == [U] {
         reset()
         fetch()
     }
     
     /// Resets the value.
-    public func reset<U: Decodable & Hashable & Firestorable>() where T == [U] {
+    public func reset<U: Decodable & Firestorable>() where T == [U] {
         didFetchAll = false
         lastDocumentSnapshot = nil
         value = []
     }
     
     /// Fetches new values.
-    public func fetch<U: Decodable & Hashable & Firestorable>() where T == [U] {
+    public func fetch<U: Decodable & Firestorable>() where T == [U] {
         if didFetchAll {
             print("did fetch all")
             return
