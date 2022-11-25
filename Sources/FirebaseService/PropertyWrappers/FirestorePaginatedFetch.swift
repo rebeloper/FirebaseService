@@ -17,8 +17,7 @@ import FirebaseFirestoreSwift
 ///
 /// struct ContentView: View {
 ///
-///     @FirestorePaginatedFetch("posts", pagination: .init(orderBy: "timestamp", descending: false, limit: 3)) /// private var posts: [Post]
-/// //    @FirestoreFetch(collectionPath: "posts", predicates: [.orderBy("timestamp", false)]) private var posts: /// [Post]
+///     @FirestorePaginatedFetch("posts", pagination: .init(orderBy: "timestamp", descending: false, limit: FirestorePaginatedFetchLimit.posts)) private var posts: [Post]
 ///
 ///     var body: some View {
 ///
@@ -114,7 +113,7 @@ import FirebaseFirestoreSwift
 ///     }
 ///
 ///     func fetchNext(_ index: Int) {
-///         if index % 3 == 0 {
+///         if index % FirestorePaginatedFetchLimit.posts == 0 {
 ///             _posts.manager.fetch()
 ///         }
 ///     }
@@ -124,7 +123,11 @@ import FirebaseFirestoreSwift
 ///     }
 /// }
 ///
-/// struct Post: Codable, Firestorable, Equatable, Hashable {
+/// struct FirestorePaginatedFetchLimit {
+///     static let posts = 3
+/// }
+///
+/// struct Post: Codable, Firestorable, Equatable {
 ///     var uid = UUID().uuidString
 ///     var value: String
 ///     var timestamp: Timestamp
