@@ -17,8 +17,7 @@ import FirebaseFirestoreSwift
 ///
 /// struct ContentView: View {
 ///
-///     @FirestorePaginatedFetch("posts", pagination: .init(orderBy: "timestamp", descending: false, limit: 3)) /// private var posts: [Post]
-/// //    @FirestoreFetch(collectionPath: "posts", predicates: [.orderBy("timestamp", false)]) private var posts: /// [Post]
+///     @FirestoreFetch(collectionPath: "posts", predicates: [.orderBy("timestamp", false)]) private /// var posts: [Post]
 ///
 ///     var body: some View {
 ///
@@ -51,14 +50,8 @@ import FirebaseFirestoreSwift
 ///                                     Image(systemName: "pencil")
 ///                                 }
 ///                             }
-///                             .onAppear {
-///                                 fetchNext(index)
-///                             }
 ///                         }
 ///                         .onDelete(perform: delete)
-///                     }
-///                     .refreshable {
-///                         refresh()
 ///                     }
 ///                 }
 ///             }
@@ -112,19 +105,9 @@ import FirebaseFirestoreSwift
 ///             print(error.localizedDescription)
 ///         }
 ///     }
-///
-///     func fetchNext(_ index: Int) {
-///         if index % 3 == 0 {
-///             _posts.manager.fetch()
-///         }
-///     }
-///
-///     func refresh() {
-///         _posts.manager.refresh()
-///     }
 /// }
 ///
-/// struct Post: Codable, Firestorable, Equatable,  Hashable {
+/// struct Post: Codable, Firestorable, Equatable {
 ///     var uid = UUID().uuidString
 ///     var value: String
 ///     var timestamp: Timestamp
