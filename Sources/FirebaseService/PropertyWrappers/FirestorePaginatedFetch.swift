@@ -150,6 +150,8 @@ public struct FirestorePaginatedFetch<T>: DynamicProperty {
         
         /// If any errors occurred, they will be exposed here as well.
         public var error: Error?
+        
+        public var sortedBy: ((Any, Any) throws -> Bool)?
     }
     
     public var wrappedValue: T {
@@ -192,7 +194,7 @@ public struct FirestorePaginatedFetch<T>: DynamicProperty {
     ///   - decodingFailureStrategy: The strategy to use when there is a failure
     ///     during the decoding phase. Defaults to `DecodingFailureStrategy.raise`.
     public init<U: Decodable & Firestorable>(_ collectionPath: String,
-                                             pagination: FirestorePaginatedFetchPagination,
+                                             pagination: FirestorePaginatedFetchPagination<U>,
                                              predicates: [QueryPredicate] = [],
                                              decodingFailureStrategy: DecodingFailureStrategy = .raise) where T == [U] {
         var predicates = predicates
@@ -384,9 +386,9 @@ final public class FirestorePaginatedFetchManager<T>: ObservableObject {
     /// - Parameters:
     ///   - element: An element to be created.
     ///   - areInIncreasingOrder: Order of the value being fetched.
-    public func create<U: Codable & Firestorable & Equatable>(_ element: U, sortedBy areInIncreasingOrder: ((U, U) throws -> Bool)? = nil) throws where T == [U] {
+    public func create<U: Codable & Firestorable & Equatable>(_ element: U) throws where T == [U] {
         try animated {
-            try value.append(element, collectionPath: configuration.path, sortedBy: areInIncreasingOrder)
+            try value.append(element, collectionPath: configuration.path, sortedBy: configuration.sortedBy)
         }
     }
     
