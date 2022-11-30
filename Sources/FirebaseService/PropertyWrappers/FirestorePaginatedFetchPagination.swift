@@ -55,7 +55,7 @@ public struct FirestorePaginatedFetchPaginationTimestamp<U: Codable & Firestorab
                 print("No dictionary")
                 return false
             }
-            print(e0Dict[orderBy])
+            print(e0Dict)
             guard let sortPredicateE0 = e0Dict[orderBy] as? [String: [String: Int]],
                   let sortPredicateE1 = e1Dict[orderBy] as? [String: [String: Int]] else {
                 print("No Timestamp")
