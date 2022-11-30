@@ -7,11 +7,11 @@
 
 import Foundation
 
-public struct FirestorePaginatedFetchPagination {
+public struct FirestorePaginatedFetchPagination<U: Decodable> {
     public let orderBy: String
     public let descending: Bool
     public let limit: Int
-    public let sortedBy: ((Any, Any) throws -> Bool)?
+    public let sortedBy: ((U, U) throws -> Bool)?
     
     public init(orderBy: String, descending: Bool, limit: Int, sortedBy: ((Any, Any) throws -> Bool)? = nil) {
         self.orderBy = orderBy

@@ -10,115 +10,12 @@ import FirebaseFirestore
 import FirebaseFirestoreSwift
 
 /// A property wrapper that fetches a Firestore collection.
-/// 
-/// import SwiftUI
-/// import FirebaseFirestore
-/// import FirebaseService
-///
-/// struct ContentView: View {
-///
-///     @FirestoreFetch(collectionPath: "posts", predicates: [.orderBy("timestamp", false)]) private /// var posts: [Post]
-///
-///     var body: some View {
-///
-///         if let error = _posts.configuration.error {
-///             Text(error.localizedDescription)
-///                 .foregroundColor(.gray)
-///                 .font(.caption)
-///         } else {
-///             VStack {
-///                 if posts.isEmpty {
-///                     ProgressView()
-///                 } else {
-///                     List {
-///                         ForEach(posts.indices, id: \.self) { index in
-///                             let post = posts[index]
-///                             VStack(alignment: .leading) {
-///                                 Text(post.value)
-///                                 Text(post.uid)
-///                                     .font(.caption)
-///                                     .foregroundColor(.gray)
-///                                     .bold()
-///                                 Text("\(post.timestamp.dateValue().formatted(.dateTime))")
-///                                     .font(.caption)
-///                                     .foregroundColor(.gray)
-///                             }
-///                             .swipeActions(edge: .leading, allowsFullSwipe: true) {
-///                                 Button {
-///                                     update(post)
-///                                 } label: {
-///                                     Image(systemName: "pencil")
-///                                 }
-///                             }
-///                         }
-///                         .onDelete(perform: delete)
-///                     }
-///                 }
-///             }
-///             .toolbar {
-///                 ToolbarItem {
-///                     Button {
-///                         create()
-///                     } label: {
-///                         Image(systemName: "plus")
-///                     }
-///                 }
-///             }
-///         }
-///     }
-///
-///     func delete(indexSet: IndexSet) {
-///         for index in indexSet {
-///             delete(posts[index])
-///         }
-///     }
-///
-///     func create() {
-///         do {
-///             try animated {
-///                 let post = Post(value: "New post", timestamp: Timestamp(date: Date()))
-///                 try _posts.manager.create(post, sortedBy: { p0, p1 in
-///                     p0.timestamp.dateValue() < p1.timestamp.dateValue()
-///                 })
-///             }
-///         } catch {
-///             print(error.localizedDescription)
-///         }
-///     }
-///
-///     func delete(_ post: Post) {
-///         do {
-///             try _posts.manager.delete(post)
-///         } catch {
-///             print(error.localizedDescription)
-///         }
-///     }
-///
-///     func update(_ post: Post) {
-///         var newPost = post
-///         newPost.value = "Updated post"
-///         do {
-///             try _posts.manager.update(post, with: newPost, sortedBy: { p0, p1 in
-///                 p0.timestamp.dateValue() < p1.timestamp.dateValue()
-///             })
-///         } catch {
-///             print(error.localizedDescription)
-///         }
-///     }
-/// }
-///
-/// struct Post: Codable, Firestorable, Equatable {
-///     var uid = UUID().uuidString
-///     var value: String
-///     var timestamp: Timestamp
-/// }
-///
 @propertyWrapper
-public struct FirestoreFetch<T>: DynamicProperty {
-    @StateObject public var manager: FirestoreFetchManager<T>
+public struct FirestoreFetch<T, U: Codable & Firestorable & Equatable>: DynamicProperty {
+    @StateObject public var manager: FirestoreFetchManager<T, U>
     
     /// The query's configurable properties.
-    public struct Configuration {
+    public struct Configuration<U> {
         /// The query's collection path.
         public var path: String
         
@@ -131,7 +28,7 @@ public struct FirestoreFetch<T>: DynamicProperty {
         /// If any errors occurred, they will be exposed here as well.
         public var error: Error?
         
-        public var sortedBy: ((Any, Any) throws -> Bool)?
+        public var sortedBy: ((U, U) throws -> Bool)?
     }
     
     public var wrappedValue: T {
@@ -155,7 +52,7 @@ public struct FirestoreFetch<T>: DynamicProperty {
     }
     
     /// A binding to the request's mutable configuration properties
-    public var configuration: Configuration {
+    public var configuration: Configuration<U> {
         get {
             manager.configuration
         }
@@ -172,21 +69,21 @@ public struct FirestoreFetch<T>: DynamicProperty {
     ///     filter for the fetched results.
     ///   - decodingFailureStrategy: The strategy to use when there is a failure
     ///     during the decoding phase. Defaults to `DecodingFailureStrategy.raise`.
-    public init<U: Decodable>(_ collectionPath: String,
-                              predicates: [QueryPredicate] = [],
-                              sortedBy: ((Any, Any) throws -> Bool)? = nil,
-                              decodingFailureStrategy: DecodingFailureStrategy = .raise) where T == [U] {
+    public init(_ collectionPath: String,
+                predicates: [QueryPredicate] = [],
+                sortedBy: ((U, U) throws -> Bool)? = nil,
+                decodingFailureStrategy: DecodingFailureStrategy = .raise) where T == [U] {
         let configuration = Configuration(
             path: collectionPath,
             predicates: predicates,
             decodingFailureStrategy: decodingFailureStrategy,
             sortedBy: sortedBy
         )
-        _manager = StateObject(wrappedValue: FirestoreFetchManager<T>(configuration: configuration))
+        _manager = StateObject(wrappedValue: FirestoreFetchManager<T, U>(configuration: configuration))
     }
 }
 
-final public class FirestoreFetchManager<T>: ObservableObject {
+final public class FirestoreFetchManager<T, U: Codable & Firestorable & Equatable>: ObservableObject {
     
     @Published public var value: T
     
@@ -195,7 +92,7 @@ final public class FirestoreFetchManager<T>: ObservableObject {
     private var setupQuery: (() -> Void)!
     
     internal var shouldUpdateQuery = true
-    internal var configuration: FirestoreFetch<T>.Configuration {
+    internal var configuration: FirestoreFetch<T, U>.Configuration<U> {
         didSet {
             // prevent never-ending update cycle when updating the error field
             guard shouldUpdateQuery else { return }
@@ -203,7 +100,7 @@ final public class FirestoreFetchManager<T>: ObservableObject {
         }
     }
     
-    public init<U: Decodable>(configuration: FirestoreFetch<T>.Configuration) where T == [U] {
+    public init(configuration: FirestoreFetch<T, U>.Configuration<U>) where T == [U] {
         self.value = [U]()
         self.configuration = configuration
         
@@ -211,7 +108,7 @@ final public class FirestoreFetchManager<T>: ObservableObject {
     }
     
     /// Fetches the values.
-    public func fetch<U: Decodable>() where T == [U] {
+    public func fetch() where T == [U] {
         setupQuery = createQuery { [weak self] result in
             switch result {
             case .success(let querySnapshot):
@@ -316,7 +213,7 @@ final public class FirestoreFetchManager<T>: ObservableObject {
     /// - Parameters:
     ///   - element: An element to be created.
     ///   - areInIncreasingOrder: Order of the value being fetched.
-    public func create<U: Codable & Firestorable & Equatable>(_ element: U) throws where T == [U] {
+    public func create(_ element: U) throws where T == [U] {
         try animated {
             try value.append(element, collectionPath: configuration.path, sortedBy: configuration.sortedBy)
         }
@@ -324,7 +221,7 @@ final public class FirestoreFetchManager<T>: ObservableObject {
     
     /// Deletes an element.
     /// - Parameter element: The element to be deleted.
-    public func delete<U: Codable & Firestorable & Equatable>(_ element: U) throws where T == [U] {
+    public func delete(_ element: U) throws where T == [U] {
         try animated {
             try value.delete(element, collectionPath: configuration.path)
         }
@@ -334,7 +231,7 @@ final public class FirestoreFetchManager<T>: ObservableObject {
     /// - Parameters:
     ///   - element: An element to be updated.
     ///   - newElement: The updated element.
-    public func update<U: Codable & Firestorable & Equatable>(_ element: U, with newElement: U) throws where T == [U] {
+    public func update(_ element: U, with newElement: U) throws where T == [U] {
         try animated {
             try value.update(element, with: newElement, collectionPath: configuration.path)
         }

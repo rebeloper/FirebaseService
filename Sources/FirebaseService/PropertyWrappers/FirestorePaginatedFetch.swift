@@ -10,135 +10,12 @@ import FirebaseFirestore
 import FirebaseFirestoreSwift
 
 /// A property wrapper that fetches a Firestore collection in a paginated way.
-///
-/// import SwiftUI
-/// import FirebaseFirestore
-/// import FirebaseService
-///
-/// struct ContentView: View {
-///
-///     @FirestorePaginatedFetch("posts", pagination: .init(orderBy: "timestamp", descending: false, limit: FirestorePaginatedFetchLimit.posts)) private var posts: [Post]
-///
-///     var body: some View {
-///
-///         if let error = _posts.configuration.error {
-///             Text(error.localizedDescription)
-///                 .foregroundColor(.gray)
-///                 .font(.caption)
-///         } else {
-///             VStack {
-///                 if posts.isEmpty {
-///                     ProgressView()
-///                 } else {
-///                     List {
-///                         ForEach(posts.indices, id: \.self) { index in
-///                             let post = posts[index]
-///                             VStack(alignment: .leading) {
-///                                 Text(post.value)
-///                                 Text(post.uid)
-///                                     .font(.caption)
-///                                     .foregroundColor(.gray)
-///                                     .bold()
-///                                 Text("\(post.timestamp.dateValue().formatted(.dateTime))")
-///                                     .font(.caption)
-///                                     .foregroundColor(.gray)
-///                             }
-///                             .swipeActions(edge: .leading, allowsFullSwipe: true) {
-///                                 Button {
-///                                     update(post)
-///                                 } label: {
-///                                     Image(systemName: "pencil")
-///                                 }
-///                             }
-///                             .onAppear {
-///                                 fetchNext(index)
-///                             }
-///                         }
-///                         .onDelete(perform: delete)
-///                     }
-///                     .refreshable {
-///                         refresh()
-///                     }
-///                 }
-///             }
-///             .toolbar {
-///                 ToolbarItem {
-///                     Button {
-///                         create()
-///                     } label: {
-///                         Image(systemName: "plus")
-///                     }
-///                 }
-///             }
-///         }
-///     }
-///
-///     func delete(indexSet: IndexSet) {
-///         for index in indexSet {
-///             delete(posts[index])
-///         }
-///     }
-///
-///     func create() {
-///         do {
-///             try animated {
-///                 let post = Post(value: "New post", timestamp: Timestamp(date: Date()))
-///                 try _posts.manager.create(post, sortedBy: { p0, p1 in
-///                     p0.timestamp.dateValue() < p1.timestamp.dateValue()
-///                 })
-///             }
-///         } catch {
-///             print(error.localizedDescription)
-///         }
-///     }
-///
-///     func delete(_ post: Post) {
-///         do {
-///             try _posts.manager.delete(post)
-///         } catch {
-///             print(error.localizedDescription)
-///         }
-///     }
-///
-///     func update(_ post: Post) {
-///         var newPost = post
-///         newPost.value = "Updated post"
-///         do {
-///             try _posts.manager.update(post, with: newPost, sortedBy: { p0, p1 in
-///                 p0.timestamp.dateValue() < p1.timestamp.dateValue()
-///             })
-///         } catch {
-///             print(error.localizedDescription)
-///         }
-///     }
-///
-///     func fetchNext(_ index: Int) {
-///         if index % FirestorePaginatedFetchLimit.posts == 0 {
-///             _posts.manager.fetch()
-///         }
-///     }
-///
-///     func refresh() {
-///         _posts.manager.refresh()
-///     }
-/// }
-///
-/// struct FirestorePaginatedFetchLimit {
-///     static let posts = 3
-/// }
-///
-/// struct Post: Codable, Firestorable, Equatable {
-///     var uid = UUID().uuidString
-///     var value: String
-///     var timestamp: Timestamp
-/// }
-///
 @propertyWrapper
-public struct FirestorePaginatedFetch<T>: DynamicProperty {
-    @StateObject public var manager: FirestorePaginatedFetchManager<T>
+public struct FirestorePaginatedFetch<T, U: Codable & Firestorable & Equatable>: DynamicProperty {
+    @StateObject public var manager: FirestorePaginatedFetchManager<T, U>
     
     /// The query's configurable properties.
-    public struct Configuration {
+    public struct Configuration<U> {
         /// The query's collection path.
         public var path: String
         
@@ -151,7 +28,7 @@ public struct FirestorePaginatedFetch<T>: DynamicProperty {
         /// If any errors occurred, they will be exposed here as well.
         public var error: Error?
         
-        public var sortedBy: ((Any, Any) throws -> Bool)?
+        public var sortedBy: ((U, U) throws -> Bool)?
     }
     
     public var wrappedValue: T {
@@ -175,7 +52,7 @@ public struct FirestorePaginatedFetch<T>: DynamicProperty {
     }
     
     /// A binding to the request's mutable configuration properties
-    public var configuration: Configuration {
+    public var configuration: Configuration<U> {
         get {
             manager.configuration
         }
@@ -193,24 +70,24 @@ public struct FirestorePaginatedFetch<T>: DynamicProperty {
     ///     filter for the fetched results.
     ///   - decodingFailureStrategy: The strategy to use when there is a failure
     ///     during the decoding phase. Defaults to `DecodingFailureStrategy.raise`.
-    public init<U: Decodable & Firestorable>(_ collectionPath: String,
-                                             pagination: FirestorePaginatedFetchPagination,
-                                             predicates: [QueryPredicate] = [],
-                                             decodingFailureStrategy: DecodingFailureStrategy = .raise) where T == [U] {
+    public init(_ collectionPath: String,
+                pagination: FirestorePaginatedFetchPagination<U>,
+                predicates: [QueryPredicate] = [],
+                decodingFailureStrategy: DecodingFailureStrategy = .raise) where T == [U] {
         var predicates = predicates
         predicates.append(.order(by: pagination.orderBy, descending: pagination.descending))
         predicates.append(.limit(to: pagination.limit))
-        let configuration = Configuration(
+        let configuration = Configuration<U>(
             path: collectionPath,
             predicates: predicates,
             decodingFailureStrategy: decodingFailureStrategy,
             sortedBy: pagination.sortedBy
         )
-        _manager = StateObject(wrappedValue: FirestorePaginatedFetchManager<T>(configuration: configuration))
+        _manager = StateObject(wrappedValue: FirestorePaginatedFetchManager<T, U>(configuration: configuration))
     }
 }
 
-final public class FirestorePaginatedFetchManager<T>: ObservableObject {
+final public class FirestorePaginatedFetchManager<T, U: Codable & Firestorable & Equatable>: ObservableObject {
     
     @Published public var value: T
     @Published private var lastDocumentSnapshot: DocumentSnapshot? = nil
@@ -221,7 +98,7 @@ final public class FirestorePaginatedFetchManager<T>: ObservableObject {
     private var fetchQuery: (() -> Void)!
     
     internal var shouldUpdateQuery = true
-    internal var configuration: FirestorePaginatedFetch<T>.Configuration {
+    internal var configuration: FirestorePaginatedFetch<T, U>.Configuration<U> {
         didSet {
             // prevent never-ending update cycle when updating the error field
             guard shouldUpdateQuery else { return }
@@ -229,7 +106,7 @@ final public class FirestorePaginatedFetchManager<T>: ObservableObject {
         }
     }
     
-    public init<U: Decodable & Firestorable>(configuration: FirestorePaginatedFetch<T>.Configuration) where T == [U] {
+    public init(configuration: FirestorePaginatedFetch<T, U>.Configuration<U>) where T == [U] {
         self.value = [U]()
         self.configuration = configuration
         
@@ -237,20 +114,20 @@ final public class FirestorePaginatedFetchManager<T>: ObservableObject {
     }
     
     /// Refreshes the value.
-    public func refresh<U: Decodable & Firestorable>() where T == [U] {
+    public func refresh() where T == [U] {
         reset()
         fetch()
     }
     
     /// Resets the value.
-    public func reset<U: Decodable & Firestorable>() where T == [U] {
+    public func reset() where T == [U] {
         didFetchAll = false
         lastDocumentSnapshot = nil
         value = []
     }
     
     /// Fetches new values.
-    public func fetch<U: Decodable & Firestorable>() where T == [U] {
+    public func fetch() where T == [U] {
         if didFetchAll {
             print("did fetch all")
             return
@@ -387,7 +264,7 @@ final public class FirestorePaginatedFetchManager<T>: ObservableObject {
     /// - Parameters:
     ///   - element: An element to be created.
     ///   - areInIncreasingOrder: Order of the value being fetched.
-    public func create<U: Codable & Firestorable & Equatable>(_ element: U) throws where T == [U] {
+    public func create(_ element: U) throws where T == [U] {
         try animated {
             try value.append(element, collectionPath: configuration.path, sortedBy: configuration.sortedBy)
         }
