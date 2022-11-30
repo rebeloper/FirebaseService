@@ -85,6 +85,30 @@ public struct FirestorePaginatedFetch<T, U: Codable & Firestorable & Equatable>:
         )
         _manager = StateObject(wrappedValue: FirestorePaginatedFetchManager<T, U>(configuration: configuration))
     }
+    
+    /// Creates an instance by defining a query based on the parameters.
+    /// - Parameters:
+    ///   - collectionPath: The path to the Firestore collection to query.
+    ///   - timestampPagination: Sets the order and limit of the query according to Timestamp.
+    ///   - predicates: An optional array of `QueryPredicate`s that defines a
+    ///     filter for the fetched results.
+    ///   - decodingFailureStrategy: The strategy to use when there is a failure
+    ///     during the decoding phase. Defaults to `DecodingFailureStrategy.raise`.
+    public init(_ collectionPath: String,
+                timestampPagination: FirestorePaginatedFetchPaginationTimestamp<U>,
+                predicates: [QueryPredicate] = [],
+                decodingFailureStrategy: DecodingFailureStrategy = .raise) where T == [U] {
+        var predicates = predicates
+        predicates.append(.order(by: timestampPagination.orderBy, descending: timestampPagination.descending))
+        predicates.append(.limit(to: timestampPagination.limit))
+        let configuration = Configuration<U>(
+            path: collectionPath,
+            predicates: predicates,
+            decodingFailureStrategy: decodingFailureStrategy,
+            sortedBy: timestampPagination.sortedBy
+        )
+        _manager = StateObject(wrappedValue: FirestorePaginatedFetchManager<T, U>(configuration: configuration))
+    }
 }
 
 final public class FirestorePaginatedFetchManager<T, U: Codable & Firestorable & Equatable>: ObservableObject {

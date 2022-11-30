@@ -7,23 +7,6 @@
 
 import Foundation
 
-//public struct FirestorePaginatedFetchPagination<U: Codable & Firestorable & Equatable> {
-//    public let orderBy: String
-//    public let descending: Bool
-//    public let limit: Int
-//    public let sortedBy: ((U, U) throws -> Bool)
-//
-//    public init(orderBy: String,
-//                descending: Bool,
-//                limit: Int,
-//                sortedBy: @escaping ((U, U) throws -> Bool)) {
-//        self.orderBy = orderBy
-//        self.descending = descending
-//        self.limit = limit
-//        self.sortedBy = sortedBy
-//    }
-//}
-
 public struct FirestorePaginatedFetchPagination<U: Codable & Firestorable & Equatable, E: Comparable> {
     public let orderBy: String
     public let descending: Bool
@@ -52,9 +35,31 @@ public struct FirestorePaginatedFetchPagination<U: Codable & Firestorable & Equa
     }
 }
 
-public extension Encodable {
-    var dictionary: [String: Any]? {
-        guard let data = try? JSONEncoder().encode(self) else { return nil }
-        return (try? JSONSerialization.jsonObject(with: data, options: .allowFragments)).flatMap { $0 as? [String: Any] }
+import FirebaseFirestore
+
+public struct FirestorePaginatedFetchPaginationTimestamp<U: Codable & Firestorable & Equatable> {
+    public let orderBy: String
+    public let descending: Bool
+    public let limit: Int
+    public let sortedBy: ((U, U) throws -> Bool)
+    
+    public init(orderBy: String,
+                descending: Bool,
+                limit: Int) {
+        self.orderBy = orderBy
+        self.descending = descending
+        self.limit = limit
+        self.sortedBy = { e0, e1 in
+            guard let e0Dict = e0.dictionary,
+                  let e1Dict = e1.dictionary,
+                  let sortPredicateE0 = e0Dict[orderBy] as? Timestamp,
+                  let sortPredicateE1 = e1Dict[orderBy] as? Timestamp else { return false }
+            
+            if descending {
+                return sortPredicateE0.dateValue() > sortPredicateE1.dateValue()
+            } else {
+                return sortPredicateE0.dateValue() < sortPredicateE1.dateValue()
+            }
+        }
     }
 }
