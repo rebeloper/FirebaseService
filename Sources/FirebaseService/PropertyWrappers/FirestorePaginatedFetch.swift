@@ -71,7 +71,7 @@ public struct FirestorePaginatedFetch<T, U: Codable & Firestorable & Equatable>:
     ///   - decodingFailureStrategy: The strategy to use when there is a failure
     ///     during the decoding phase. Defaults to `DecodingFailureStrategy.raise`.
     public init<E: Comparable>(_ collectionPath: String,
-                pagination: FirestorePaginatedFetchPagination<U, E>,
+                pagination: FirestorePagination<U, E>,
                 predicates: [QueryPredicate] = [],
                 decodingFailureStrategy: DecodingFailureStrategy = .raise) where T == [U] {
         var predicates = predicates
@@ -95,17 +95,17 @@ public struct FirestorePaginatedFetch<T, U: Codable & Firestorable & Equatable>:
     ///   - decodingFailureStrategy: The strategy to use when there is a failure
     ///     during the decoding phase. Defaults to `DecodingFailureStrategy.raise`.
     public init(_ collectionPath: String,
-                timestampPagination: FirestorePaginatedFetchPaginationTimestamp<U>,
+                pagination: FirestoreTimestampPagination<U>,
                 predicates: [QueryPredicate] = [],
                 decodingFailureStrategy: DecodingFailureStrategy = .raise) where T == [U] {
         var predicates = predicates
-        predicates.append(.order(by: timestampPagination.orderBy, descending: timestampPagination.descending))
-        predicates.append(.limit(to: timestampPagination.limit))
+        predicates.append(.order(by: pagination.orderBy, descending: pagination.descending))
+        predicates.append(.limit(to: pagination.limit))
         let configuration = Configuration<U>(
             path: collectionPath,
             predicates: predicates,
             decodingFailureStrategy: decodingFailureStrategy,
-            sortedBy: timestampPagination.sortedBy
+            sortedBy: pagination.sortedBy
         )
         _manager = StateObject(wrappedValue: FirestorePaginatedFetchManager<T, U>(configuration: configuration))
     }

@@ -1,5 +1,5 @@
 //
-//  FirestorePaginatedFetchPagination.swift
+//  FirestorePagination.swift
 //  
 //
 //  Created by Alex Nagy on 22.11.2022.
@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct FirestorePaginatedFetchPagination<U: Codable & Firestorable & Equatable, E: Comparable> {
+public struct FirestorePagination<U: Codable & Firestorable & Equatable, E: Comparable> {
     public let orderBy: String
     public let descending: Bool
     public let limit: Int
@@ -37,7 +37,7 @@ public struct FirestorePaginatedFetchPagination<U: Codable & Firestorable & Equa
 
 import FirebaseFirestore
 
-public struct FirestorePaginatedFetchPaginationTimestamp<U: Codable & Firestorable & Equatable> {
+public struct FirestoreTimestampPagination<U: Codable & Firestorable & Equatable> {
     public let orderBy: String
     public let descending: Bool
     public let limit: Int
