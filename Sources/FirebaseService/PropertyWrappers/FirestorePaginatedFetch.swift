@@ -194,7 +194,7 @@ public struct FirestorePaginatedFetch<T>: DynamicProperty {
     ///   - decodingFailureStrategy: The strategy to use when there is a failure
     ///     during the decoding phase. Defaults to `DecodingFailureStrategy.raise`.
     public init<U: Decodable & Firestorable>(_ collectionPath: String,
-                                             pagination: FirestorePaginatedFetchPagination<U>,
+                                             pagination: FirestorePaginatedFetchPagination,
                                              predicates: [QueryPredicate] = [],
                                              decodingFailureStrategy: DecodingFailureStrategy = .raise) where T == [U] {
         var predicates = predicates
@@ -203,7 +203,8 @@ public struct FirestorePaginatedFetch<T>: DynamicProperty {
         let configuration = Configuration(
             path: collectionPath,
             predicates: predicates,
-            decodingFailureStrategy: decodingFailureStrategy
+            decodingFailureStrategy: decodingFailureStrategy,
+            sortedBy: pagination.sortedBy
         )
         _manager = StateObject(wrappedValue: FirestorePaginatedFetchManager<T>(configuration: configuration))
     }

@@ -130,6 +130,8 @@ public struct FirestoreFetch<T>: DynamicProperty {
         
         /// If any errors occurred, they will be exposed here as well.
         public var error: Error?
+        
+        public var sortedBy: ((Any, Any) throws -> Bool)?
     }
     
     public var wrappedValue: T {
@@ -172,11 +174,13 @@ public struct FirestoreFetch<T>: DynamicProperty {
     ///     during the decoding phase. Defaults to `DecodingFailureStrategy.raise`.
     public init<U: Decodable>(_ collectionPath: String,
                               predicates: [QueryPredicate] = [],
+                              sortedBy: ((Any, Any) throws -> Bool)? = nil,
                               decodingFailureStrategy: DecodingFailureStrategy = .raise) where T == [U] {
         let configuration = Configuration(
             path: collectionPath,
             predicates: predicates,
-            decodingFailureStrategy: decodingFailureStrategy
+            decodingFailureStrategy: decodingFailureStrategy,
+            sortedBy: sortedBy
         )
         _manager = StateObject(wrappedValue: FirestoreFetchManager<T>(configuration: configuration))
     }
@@ -312,9 +316,9 @@ final public class FirestoreFetchManager<T>: ObservableObject {
     /// - Parameters:
     ///   - element: An element to be created.
     ///   - areInIncreasingOrder: Order of the value being fetched.
-    public func create<U: Codable & Firestorable & Equatable>(_ element: U, sortedBy areInIncreasingOrder: ((U, U) throws -> Bool)? = nil) throws where T == [U] {
+    public func create<U: Codable & Firestorable & Equatable>(_ element: U) throws where T == [U] {
         try animated {
-            try value.append(element, collectionPath: configuration.path, sortedBy: areInIncreasingOrder)
+            try value.append(element, collectionPath: configuration.path, sortedBy: configuration.sortedBy)
         }
     }
     
