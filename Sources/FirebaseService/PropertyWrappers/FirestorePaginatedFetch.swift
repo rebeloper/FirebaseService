@@ -70,8 +70,8 @@ public struct FirestorePaginatedFetch<T, U: Codable & Firestorable & Equatable>:
     ///     filter for the fetched results.
     ///   - decodingFailureStrategy: The strategy to use when there is a failure
     ///     during the decoding phase. Defaults to `DecodingFailureStrategy.raise`.
-    public init(_ collectionPath: String,
-                pagination: FirestorePaginatedFetchPagination<U>,
+    public init<E: Comparable>(_ collectionPath: String,
+                pagination: FirestorePaginatedFetchPagination<U, E>,
                 predicates: [QueryPredicate] = [],
                 decodingFailureStrategy: DecodingFailureStrategy = .raise) where T == [U] {
         var predicates = predicates
