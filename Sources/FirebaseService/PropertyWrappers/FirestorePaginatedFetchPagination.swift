@@ -56,17 +56,18 @@ public struct FirestorePaginatedFetchPaginationTimestamp<U: Codable & Firestorab
                 return false
             }
             print(e0Dict[orderBy])
-            guard let sortPredicateE0 = e0Dict[orderBy] as? Timestamp,
-                  let sortPredicateE1 = e1Dict[orderBy] as? Timestamp else {
+            guard let sortPredicateE0 = e0Dict[orderBy] as? [String: Int],
+                  let sortPredicateE1 = e1Dict[orderBy] as? [String: Int] else {
                 print("No Timestamp")
                 return false
             }
-            
-            if descending {
-                return sortPredicateE0.dateValue() > sortPredicateE1.dateValue()
-            } else {
-                return sortPredicateE0.dateValue() < sortPredicateE1.dateValue()
-            }
+            print(sortPredicateE0)
+            return true
+//            if descending {
+//                return sortPredicateE0.dateValue() > sortPredicateE1.dateValue()
+//            } else {
+//                return sortPredicateE0.dateValue() < sortPredicateE1.dateValue()
+//            }
         }
     }
 }
