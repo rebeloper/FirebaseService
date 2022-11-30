@@ -89,7 +89,7 @@ public struct FirestorePaginatedFetch<T, U: Codable & Firestorable & Equatable>:
     /// Creates an instance by defining a query based on the parameters.
     /// - Parameters:
     ///   - collectionPath: The path to the Firestore collection to query.
-    ///   - timestampPagination: Sets the order and limit of the query according to Timestamp.
+    ///   - pagination: Sets the order and limit of the query according to Timestamp.
     ///   - predicates: An optional array of `QueryPredicate`s that defines a
     ///     filter for the fetched results.
     ///   - decodingFailureStrategy: The strategy to use when there is a failure
