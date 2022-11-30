@@ -28,7 +28,7 @@ public struct FirestorePaginatedFetch<T, U: Codable & Firestorable & Equatable>:
         /// If any errors occurred, they will be exposed here as well.
         public var error: Error?
         
-        public var sortedBy: ((U, U) throws -> Bool)?
+        public var sortedBy: ((U, U) throws -> Bool)
     }
     
     public var wrappedValue: T {
