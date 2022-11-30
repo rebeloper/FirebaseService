@@ -71,9 +71,9 @@ public struct FirestorePaginatedFetch<T, U: Codable & Firestorable & Equatable>:
     ///   - decodingFailureStrategy: The strategy to use when there is a failure
     ///     during the decoding phase. Defaults to `DecodingFailureStrategy.raise`.
     public init<E: Comparable>(_ collectionPath: String,
-                pagination: FirestorePagination<U, E>,
-                predicates: [QueryPredicate] = [],
-                decodingFailureStrategy: DecodingFailureStrategy = .raise) where T == [U] {
+                               pagination: FirestorePagination<U, E>,
+                               predicates: [QueryPredicate] = [],
+                               decodingFailureStrategy: DecodingFailureStrategy = .raise) where T == [U] {
         var predicates = predicates
         predicates.append(.order(by: pagination.orderBy, descending: pagination.descending))
         predicates.append(.limit(to: pagination.limit))
@@ -263,7 +263,6 @@ final public class FirestorePaginatedFetchManager<T, U: Codable & Firestorable &
     /// Creates a new element.
     /// - Parameters:
     ///   - element: An element to be created.
-    ///   - areInIncreasingOrder: Order of the value being fetched.
     public func create(_ element: U) throws where T == [U] {
         try animated {
             try value.append(element, collectionPath: configuration.path, sortedBy: configuration.sortedBy)

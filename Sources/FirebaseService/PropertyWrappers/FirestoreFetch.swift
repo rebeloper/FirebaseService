@@ -65,19 +65,20 @@ public struct FirestoreFetch<T, U: Codable & Firestorable & Equatable>: DynamicP
     /// Creates an instance by defining a query based on the parameters.
     /// - Parameters:
     ///   - collectionPath: The path to the Firestore collection to query.
+    ///   - sort: Sets the sort of the query. Defaults to `nil`.
     ///   - predicates: An optional array of `QueryPredicate`s that defines a
     ///     filter for the fetched results.
     ///   - decodingFailureStrategy: The strategy to use when there is a failure
     ///     during the decoding phase. Defaults to `DecodingFailureStrategy.raise`.
-    public init(_ collectionPath: String,
-                predicates: [QueryPredicate] = [],
-                sortedBy: ((U, U) throws -> Bool)? = nil,
-                decodingFailureStrategy: DecodingFailureStrategy = .raise) where T == [U] {
+    public init<E: Comparable>(_ collectionPath: String,
+                               sort: FirestoreSort<U, E>? = nil,
+                               predicates: [QueryPredicate] = [],
+                               decodingFailureStrategy: DecodingFailureStrategy = .raise) where T == [U] {
         let configuration = Configuration(
             path: collectionPath,
             predicates: predicates,
             decodingFailureStrategy: decodingFailureStrategy,
-            sortedBy: sortedBy
+            sortedBy: sort?.sortedBy
         )
         _manager = StateObject(wrappedValue: FirestoreFetchManager<T, U>(configuration: configuration))
     }
@@ -212,7 +213,6 @@ final public class FirestoreFetchManager<T, U: Codable & Firestorable & Equatabl
     /// Creates a new element.
     /// - Parameters:
     ///   - element: An element to be created.
-    ///   - areInIncreasingOrder: Order of the value being fetched.
     public func create(_ element: U) throws where T == [U] {
         try animated {
             try value.append(element, collectionPath: configuration.path, sortedBy: configuration.sortedBy)

@@ -1,26 +1,23 @@
 //
-//  FirestorePagination.swift
+//  FirestoreSort.swift
 //  
 //
-//  Created by Alex Nagy on 22.11.2022.
+//  Created by Alex Nagy on 01.12.2022.
 //
 
 import Foundation
 import FirebaseFirestore
 
-public struct FirestorePagination<U: Codable & Firestorable & Equatable, C: Comparable> {
+public struct FirestoreSort<U: Codable & Firestorable & Equatable, C: Comparable> {
     public let orderBy: String
     public let descending: Bool
-    public let limit: Int
     public let sortedBy: ((U, U) throws -> Bool)
     
     public init(orderBy: String,
                 type: C.Type,
-                descending: Bool,
-                limit: Int) {
+                descending: Bool) {
         self.orderBy = orderBy
         self.descending = descending
-        self.limit = limit
         if type == Timestamp.self {
             self.sortedBy = { comparable0, comparable1 in
                 guard let predicateSeconds0 = (comparable0.dictionary?[orderBy] as? [String: Int])?["seconds"],
@@ -59,3 +56,4 @@ public struct FirestorePagination<U: Codable & Firestorable & Equatable, C: Comp
     }
     
 }
+
