@@ -52,13 +52,23 @@ public struct FirestorePaginatedFetchPaginationTimestamp<U: Codable & Firestorab
         self.sortedBy = { e0, e1 in
             guard let e0Dict = e0.dictionary,
                   let e1Dict = e1.dictionary,
-                  let sortPredicateE0 = (e0Dict[orderBy] as? [String: Int])?["seconds"],
-                  let sortPredicateE1 = (e1Dict[orderBy] as? [String: Int])?["seconds"] else { return false }
+                  let e0Seconds = (e0Dict[orderBy] as? [String: Int])?["seconds"],
+                  let e1Seconds = (e1Dict[orderBy] as? [String: Int])?["seconds"],
+                  let e0Nanoseconds = (e0Dict[orderBy] as? [String: Int])?["nanoseconds"],
+                  let e1Nanoseconds = (e1Dict[orderBy] as? [String: Int])?["nanoseconds"] else { return false }
             
-            if descending {
-                return sortPredicateE0 > sortPredicateE1
+            if e0Seconds == e1Seconds {
+                if descending {
+                    return e0Nanoseconds > e1Nanoseconds
+                } else {
+                    return e0Nanoseconds < e1Nanoseconds
+                }
             } else {
-                return sortPredicateE0 < sortPredicateE1
+                if descending {
+                    return e0Seconds > e1Seconds
+                } else {
+                    return e0Seconds < e1Seconds
+                }
             }
         }
     }
