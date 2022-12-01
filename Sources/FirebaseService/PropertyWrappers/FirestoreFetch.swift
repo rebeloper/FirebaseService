@@ -74,6 +74,10 @@ public struct FirestoreFetch<T, U: Codable & Firestorable & Equatable>: DynamicP
                                sort: FirestoreSort<U, E>? = nil,
                                predicates: [QueryPredicate] = [],
                                decodingFailureStrategy: DecodingFailureStrategy = .raise) where T == [U] {
+        var predicates = predicates
+        if let sort {
+            predicates.append(.order(by: sort.orderBy, descending: sort.descending))
+        }
         let configuration = Configuration(
             path: collectionPath,
             predicates: predicates,
