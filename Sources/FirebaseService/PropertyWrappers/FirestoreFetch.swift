@@ -11,8 +11,8 @@ import FirebaseFirestoreSwift
 
 /// A property wrapper that fetches a Firestore collection.
 @propertyWrapper
-public struct FirestoreFetch<T, U: Codable & Firestorable & Equatable>: DynamicProperty {
-    @StateObject public var manager: FirestoreFetchManager<T, U>
+public struct FirestoreFetch<T, U: Codable & Firestorable & Equatable, C: Comparable>: DynamicProperty {
+    @StateObject public var manager: FirestoreFetchManager<T, U, C>
     
     /// The query's configurable properties.
     public struct Configuration<U> {
@@ -70,10 +70,10 @@ public struct FirestoreFetch<T, U: Codable & Firestorable & Equatable>: DynamicP
     ///     filter for the fetched results.
     ///   - decodingFailureStrategy: The strategy to use when there is a failure
     ///     during the decoding phase. Defaults to `DecodingFailureStrategy.raise`.
-    public init<E: Comparable>(_ collectionPath: String,
-                               sort: FirestoreSort<U, E>? = nil,
-                               predicates: [QueryPredicate] = [],
-                               decodingFailureStrategy: DecodingFailureStrategy = .raise) where T == [U] {
+    public init(_ collectionPath: String,
+                sort: FirestoreSort<U, C>? = nil,
+                predicates: [QueryPredicate] = [],
+                decodingFailureStrategy: DecodingFailureStrategy = .raise) where T == [U] {
         var predicates = predicates
         if let sort {
             predicates.append(.order(by: sort.orderBy, descending: sort.descending))
@@ -84,11 +84,11 @@ public struct FirestoreFetch<T, U: Codable & Firestorable & Equatable>: DynamicP
             decodingFailureStrategy: decodingFailureStrategy,
             sortedBy: sort?.sortedBy
         )
-        _manager = StateObject(wrappedValue: FirestoreFetchManager<T, U>(configuration: configuration))
+        _manager = StateObject(wrappedValue: FirestoreFetchManager<T, U, C>(configuration: configuration))
     }
 }
 
-final public class FirestoreFetchManager<T, U: Codable & Firestorable & Equatable>: ObservableObject {
+final public class FirestoreFetchManager<T, U: Codable & Firestorable & Equatable, C: Comparable>: ObservableObject {
     
     @Published public var value: T
     
@@ -97,7 +97,7 @@ final public class FirestoreFetchManager<T, U: Codable & Firestorable & Equatabl
     private var setupQuery: (() -> Void)!
     
     internal var shouldUpdateQuery = true
-    internal var configuration: FirestoreFetch<T, U>.Configuration<U> {
+    internal var configuration: FirestoreFetch<T, U, C>.Configuration<U> {
         didSet {
             // prevent never-ending update cycle when updating the error field
             guard shouldUpdateQuery else { return }
@@ -105,7 +105,7 @@ final public class FirestoreFetchManager<T, U: Codable & Firestorable & Equatabl
         }
     }
     
-    public init(configuration: FirestoreFetch<T, U>.Configuration<U>) where T == [U] {
+    public init(configuration: FirestoreFetch<T, U, C>.Configuration<U>) where T == [U] {
         self.value = [U]()
         self.configuration = configuration
         

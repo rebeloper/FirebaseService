@@ -11,8 +11,8 @@ import FirebaseFirestoreSwift
 
 /// A property wrapper that fetches a Firestore collection in a paginated way.
 @propertyWrapper
-public struct FirestorePaginatedFetch<T, U: Codable & Firestorable & Equatable>: DynamicProperty {
-    @StateObject public var manager: FirestorePaginatedFetchManager<T, U>
+public struct FirestorePaginatedFetch<T, U: Codable & Firestorable & Equatable, C: Comparable>: DynamicProperty {
+    @StateObject public var manager: FirestorePaginatedFetchManager<T, U, C>
     
     /// The query's configurable properties.
     public struct Configuration<U> {
@@ -70,10 +70,10 @@ public struct FirestorePaginatedFetch<T, U: Codable & Firestorable & Equatable>:
     ///     filter for the fetched results.
     ///   - decodingFailureStrategy: The strategy to use when there is a failure
     ///     during the decoding phase. Defaults to `DecodingFailureStrategy.raise`.
-    public init<E: Comparable>(_ collectionPath: String,
-                               pagination: FirestorePagination<U, E>,
-                               predicates: [QueryPredicate] = [],
-                               decodingFailureStrategy: DecodingFailureStrategy = .raise) where T == [U] {
+    public init(_ collectionPath: String,
+                pagination: FirestorePagination<U, C>,
+                predicates: [QueryPredicate] = [],
+                decodingFailureStrategy: DecodingFailureStrategy = .raise) where T == [U] {
         var predicates = predicates
         predicates.append(.order(by: pagination.orderBy, descending: pagination.descending))
         predicates.append(.limit(to: pagination.limit))
@@ -83,11 +83,11 @@ public struct FirestorePaginatedFetch<T, U: Codable & Firestorable & Equatable>:
             decodingFailureStrategy: decodingFailureStrategy,
             sortedBy: pagination.sortedBy
         )
-        _manager = StateObject(wrappedValue: FirestorePaginatedFetchManager<T, U>(configuration: configuration))
+        _manager = StateObject(wrappedValue: FirestorePaginatedFetchManager<T, U, C>(configuration: configuration))
     }
 }
 
-final public class FirestorePaginatedFetchManager<T, U: Codable & Firestorable & Equatable>: ObservableObject {
+final public class FirestorePaginatedFetchManager<T, U: Codable & Firestorable & Equatable, C: Comparable>: ObservableObject {
     
     @Published public var value: T
     @Published private var lastDocumentSnapshot: DocumentSnapshot? = nil
@@ -98,7 +98,7 @@ final public class FirestorePaginatedFetchManager<T, U: Codable & Firestorable &
     private var fetchQuery: (() -> Void)!
     
     internal var shouldUpdateQuery = true
-    internal var configuration: FirestorePaginatedFetch<T, U>.Configuration<U> {
+    internal var configuration: FirestorePaginatedFetch<T, U, C>.Configuration<U> {
         didSet {
             // prevent never-ending update cycle when updating the error field
             guard shouldUpdateQuery else { return }
@@ -106,7 +106,7 @@ final public class FirestorePaginatedFetchManager<T, U: Codable & Firestorable &
         }
     }
     
-    public init(configuration: FirestorePaginatedFetch<T, U>.Configuration<U>) where T == [U] {
+    public init(configuration: FirestorePaginatedFetch<T, U, C>.Configuration<U>) where T == [U] {
         self.value = [U]()
         self.configuration = configuration
         
