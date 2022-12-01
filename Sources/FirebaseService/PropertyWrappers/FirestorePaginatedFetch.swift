@@ -19,6 +19,9 @@ public struct FirestorePaginatedFetch<T, U: Codable & Firestorable & Equatable, 
         /// The query's collection path.
         public var path: String
         
+        /// The query's orderBy predicate
+        public var sortedBy: ((U, U) throws -> Bool)
+        
         /// The query's predicates.
         public var predicates: [QueryPredicate]
         
@@ -28,7 +31,6 @@ public struct FirestorePaginatedFetch<T, U: Codable & Firestorable & Equatable, 
         /// If any errors occurred, they will be exposed here as well.
         public var error: Error?
         
-        public var sortedBy: ((U, U) throws -> Bool)
     }
     
     public var wrappedValue: T {
@@ -79,9 +81,9 @@ public struct FirestorePaginatedFetch<T, U: Codable & Firestorable & Equatable, 
         predicates.append(.limit(to: pagination.limit))
         let configuration = Configuration<U>(
             path: collectionPath,
+            sortedBy: pagination.sortedBy,
             predicates: predicates,
-            decodingFailureStrategy: decodingFailureStrategy,
-            sortedBy: pagination.sortedBy
+            decodingFailureStrategy: decodingFailureStrategy
         )
         _manager = StateObject(wrappedValue: FirestorePaginatedFetchManager<T, U, C>(configuration: configuration))
     }

@@ -19,6 +19,9 @@ public struct FirestoreFetch<T, U: Codable & Firestorable & Equatable, C: Compar
         /// The query's collection path.
         public var path: String
         
+        /// The query's orderBy predicate
+        public var sortedBy: ((U, U) throws -> Bool)
+        
         /// The query's predicates.
         public var predicates: [QueryPredicate]
         
@@ -28,7 +31,6 @@ public struct FirestoreFetch<T, U: Codable & Firestorable & Equatable, C: Compar
         /// If any errors occurred, they will be exposed here as well.
         public var error: Error?
         
-        public var sortedBy: ((U, U) throws -> Bool)
     }
     
     public var wrappedValue: T {
@@ -78,9 +80,9 @@ public struct FirestoreFetch<T, U: Codable & Firestorable & Equatable, C: Compar
         predicates.append(.order(by: sort.orderBy, descending: sort.descending))
         let configuration = Configuration(
             path: collectionPath,
+            sortedBy: sort.sortedBy,
             predicates: predicates,
-            decodingFailureStrategy: decodingFailureStrategy,
-            sortedBy: sort.sortedBy
+            decodingFailureStrategy: decodingFailureStrategy
         )
         _manager = StateObject(wrappedValue: FirestoreFetchManager<T, U, C>(configuration: configuration))
     }
