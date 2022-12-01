@@ -20,6 +20,7 @@ public struct FirestoreSort<U: Codable & Firestorable & Equatable, C: Comparable
         self.descending = descending
         if type == Timestamp.self || type == Date.self {
             self.sortedBy = { comparable0, comparable1 in
+                print(comparable0.dictionary?[orderBy])
                 guard let predicateSeconds0 = (comparable0.dictionary?[orderBy] as? [String: Int])?["seconds"],
                       let predicateSeconds1 = (comparable1.dictionary?[orderBy] as? [String: Int])?["seconds"],
                       let predicateNanoseconds0 = (comparable0.dictionary?[orderBy] as? [String: Int])?["nanoseconds"],
