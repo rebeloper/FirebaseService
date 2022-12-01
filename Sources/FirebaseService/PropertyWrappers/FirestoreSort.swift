@@ -42,7 +42,6 @@ public struct FirestoreSort<U: Codable & Firestorable & Equatable, C: Comparable
             }
         } else if type == Date.self {
             self.sortedBy = { comparable0, comparable1 in
-                print(comparable0.dictionary?[orderBy])
                 guard let predicate0 = comparable0.dictionary?[orderBy] as? Double,
                       let predicate1 = comparable1.dictionary?[orderBy] as? Double
                 else { return false }

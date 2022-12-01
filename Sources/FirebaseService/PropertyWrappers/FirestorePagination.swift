@@ -43,6 +43,18 @@ public struct FirestorePagination<U: Codable & Firestorable & Equatable, C: Comp
                     }
                 }
             }
+        } else if type == Date.self {
+            self.sortedBy = { comparable0, comparable1 in
+                guard let predicate0 = comparable0.dictionary?[orderBy] as? Double,
+                      let predicate1 = comparable1.dictionary?[orderBy] as? Double
+                else { return false }
+                
+                if descending {
+                    return predicate0 > predicate1
+                } else {
+                    return predicate0 < predicate1
+                }
+            }
         } else {
             self.sortedBy = { comparable0, comparable1 in
                 guard let predicate0 = comparable0.dictionary?[orderBy] as? C,
