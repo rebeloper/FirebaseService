@@ -404,7 +404,7 @@ public class StorageService {
     }
 #endif
     
-#if os(iOS)
+#if os(macOS)
     @MainActor
     public static func batchUpload(images: [NSImage], atPath path: StorageReference, oldImageUrls: [String]) async throws -> [String] {
         try await withCheckedThrowingContinuation({ continuation in
