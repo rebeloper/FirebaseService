@@ -48,4 +48,33 @@ public struct AuthService {
             throw FirebaseError.alreadySignedIn
         }
     }
+    
+    @discardableResult
+    public func logout() async throws -> Bool {
+        try await withCheckedThrowingContinuation({ continuation in
+            logout { result in
+                switch result {
+                case .success(let success):
+                    continuation.resume(returning: success)
+                case .failure(let failure):
+                    continuation.resume(throwing: failure)
+                }
+            }
+        })
+    }
+    
+    private func logout(completion: @escaping (Result<Bool, Error>) -> ()) {
+        DispatchQueue.global(qos: .background).async {
+            do {
+                try Auth.auth().signOut()
+                DispatchQueue.main.async {
+                    completion(.success(true))
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    completion(.failure(error))
+                }
+            }
+        }
+    }
 }
