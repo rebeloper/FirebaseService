@@ -10,13 +10,25 @@ import FirebaseStorage
 
 public class StorageService {
     
-    public static func save(image: UIImage, folderPath: String, compressionQuality: CGFloat, completion: @escaping (Result<URL, Error>) -> ()) {
+#if os(iOS)
+    public static func save(image: UIImage, folderPath: String, compressionQuality: CGFloat = 1.0, completion: @escaping (Result<URL, Error>) -> ()) {
         guard let imageData = image.jpegData(compressionQuality: compressionQuality) else {
             completion(.failure(FirebaseError.noImageAvailable))
             return
         }
         save(data: imageData, folderPath: folderPath, completion: completion)
     }
+#endif
+    
+#if os(macOS)
+    public static func save(image: NSImage, folderPath: String, completion: @escaping (Result<URL, Error>) -> ()) {
+        guard let imageData = image.jpegData() else {
+            completion(.failure(FirebaseError.noImageAvailable))
+            return
+        }
+        save(data: imageData, folderPath: folderPath, completion: completion)
+    }
+#endif
     
     public static func delete(at url: String, completion: @escaping (Result<Bool, Error>) -> ()) {
         let imageReference = Storage.storage().reference(forURL: url)
@@ -33,7 +45,8 @@ public class StorageService {
         }
     }
     
-    public static func handleImageChange(newImage: UIImage, folderPath: String, compressionQuality: CGFloat, oldImageUrl: String, completion: @escaping (Result<URL, Error>) -> ()) {
+#if os(iOS)
+    public static func handleImageChange(newImage: UIImage, folderPath: String, compressionQuality: CGFloat = 1.0, oldImageUrl: String, completion: @escaping (Result<URL, Error>) -> ()) {
         guard oldImageUrl.contains("https") else {
             print("StorageService: Old image url does not contain https. No old image to delete. Saving new image...")
             save(image: newImage, folderPath: folderPath, compressionQuality: compressionQuality, completion: completion)
@@ -53,6 +66,30 @@ public class StorageService {
             }
         }
     }
+#endif
+    
+#if os(macOS)
+    public static func handleImageChange(newImage: NSImage, folderPath: String, oldImageUrl: String, completion: @escaping (Result<URL, Error>) -> ()) {
+        guard oldImageUrl.contains("https") else {
+            print("StorageService: Old image url does not contain https. No old image to delete. Saving new image...")
+            save(image: newImage, folderPath: folderPath, completion: completion)
+            return
+        }
+        delete(at: oldImageUrl) { (result) in
+            switch result {
+            case .success(let objectFound):
+                print("StorageService: Object to be deleted was found: \(objectFound)")
+                if objectFound {
+                    save(image: newImage, folderPath: folderPath, completion: completion)
+                } else {
+                    completion(.failure(FirebaseError.failedToDeleteAsset))
+                }
+            case .failure(let err):
+                completion(.failure(err))
+            }
+        }
+    }
+#endif
     
     public static func handleDataChange(newData: Data, folderPath: String, oldDataUrl: String, completion: @escaping (Result<URL, Error>) -> ()) {
         guard oldDataUrl.contains("https") else {
@@ -107,6 +144,7 @@ public class StorageService {
     private static var downloadUrls = [String]()
     private static var currentUploadTask: StorageUploadTask?
     
+#if os(iOS)
     public static func batchUpload(images: [UIImage], atPath path: StorageReference, oldImageUrls: [String], compressionQuality: CGFloat = 1.0, completion: @escaping (Result<[String], Error>) -> ()) {
         if images.count == 0 { completion(.success([])) }
         var datas = [Data]()
@@ -117,6 +155,20 @@ public class StorageService {
         }
         batchUpload(datas: datas, atPath: path, oldDataUrls: oldImageUrls, completion: completion)
     }
+#endif
+    
+#if os(macOS)
+    public static func batchUpload(images: [NSImage], atPath path: StorageReference, oldImageUrls: [String], completion: @escaping (Result<[String], Error>) -> ()) {
+        if images.count == 0 { completion(.success([])) }
+        var datas = [Data]()
+        images.forEach { (image) in
+            if let data = image.jpegData() {
+                datas.append(data)
+            }
+        }
+        batchUpload(datas: datas, atPath: path, oldDataUrls: oldImageUrls, completion: completion)
+    }
+#endif
     
     public static func batchUpload(datas: [Data], atPath path: StorageReference, oldDataUrls: [String], completion: @escaping (Result<[String], Error>) -> ()) {
         if datas.count == 0 {
@@ -229,8 +281,9 @@ public class StorageService {
     
     // MARK: - Async functions
     
+#if os(iOS)
     @MainActor
-    public static func save(image: UIImage, folderPath: String, compressionQuality: CGFloat) async throws -> URL {
+    public static func save(image: UIImage, folderPath: String, compressionQuality: CGFloat = 1.0) async throws -> URL {
         try await withCheckedThrowingContinuation({ continuation in
             save(image: image, folderPath: folderPath, compressionQuality: compressionQuality) { result in
                 switch result {
@@ -242,6 +295,23 @@ public class StorageService {
             }
         })
     }
+#endif
+    
+#if os(macOS)
+    @MainActor
+    public static func save(image: NSImage, folderPath: String) async throws -> URL {
+        try await withCheckedThrowingContinuation({ continuation in
+            save(image: image, folderPath: folderPath) { result in
+                switch result {
+                case .success(let url):
+                    continuation.resume(returning: url)
+                case .failure(let err):
+                    continuation.resume(throwing: err)
+                }
+            }
+        })
+    }
+#endif
     
     @MainActor
     @discardableResult
@@ -258,8 +328,9 @@ public class StorageService {
         })
     }
     
+#if os(iOS)
     @MainActor
-    public static func handleImageChange(newImage: UIImage, folderPath: String, compressionQuality: CGFloat, oldImageUrl: String) async throws -> URL {
+    public static func handleImageChange(newImage: UIImage, folderPath: String, compressionQuality: CGFloat = 1.0, oldImageUrl: String) async throws -> URL {
         try await withCheckedThrowingContinuation({ continuation in
             handleImageChange(newImage: newImage, folderPath: folderPath, compressionQuality: compressionQuality, oldImageUrl: oldImageUrl) { result in
                 switch result {
@@ -271,6 +342,23 @@ public class StorageService {
             }
         })
     }
+#endif
+    
+#if os(macOS)
+    @MainActor
+    public static func handleImageChange(newImage: NSImage, folderPath: String, oldImageUrl: String) async throws -> URL {
+        try await withCheckedThrowingContinuation({ continuation in
+            handleImageChange(newImage: newImage, folderPath: folderPath, oldImageUrl: oldImageUrl) { result in
+                switch result {
+                case .success(let url):
+                    continuation.resume(returning: url)
+                case .failure(let err):
+                    continuation.resume(throwing: err)
+                }
+            }
+        })
+    }
+#endif
     
     @MainActor
     public static func handleDataChange(newData: Data, folderPath: String, oldDataUrl: String) async throws -> URL {
@@ -300,6 +388,7 @@ public class StorageService {
         })
     }
     
+#if os(iOS)
     @MainActor
     public static func batchUpload(images: [UIImage], atPath path: StorageReference, oldImageUrls: [String], compressionQuality: CGFloat = 1.0) async throws -> [String] {
         try await withCheckedThrowingContinuation({ continuation in
@@ -313,6 +402,23 @@ public class StorageService {
             }
         })
     }
+#endif
+    
+#if os(iOS)
+    @MainActor
+    public static func batchUpload(images: [NSImage], atPath path: StorageReference, oldImageUrls: [String]) async throws -> [String] {
+        try await withCheckedThrowingContinuation({ continuation in
+            batchUpload(images: images, atPath: path, oldImageUrls: oldImageUrls) { result in
+                switch result {
+                case .success(let urls):
+                    continuation.resume(returning: urls)
+                case .failure(let err):
+                    continuation.resume(throwing: err)
+                }
+            }
+        })
+    }
+#endif
     
     @MainActor
     public static func batchUpload(datas: [Data], atPath path: StorageReference, oldDataUrls: [String]) async throws -> [String] {

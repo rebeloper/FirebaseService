@@ -53,6 +53,7 @@ extension FirebaseSignInWithAppleService: ASAuthorizationControllerDelegate {
     }
 }
 
+#if os(iOS)
 extension FirebaseSignInWithAppleService: ASAuthorizationControllerPresentationContextProviding {
     
     public var window: UIWindow? {
@@ -63,10 +64,27 @@ extension FirebaseSignInWithAppleService: ASAuthorizationControllerPresentationC
         }
         return window
     }
-
+    
     public func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
         return self.window!
     }
     
 }
+#endif
 
+#if os(macOS)
+extension FirebaseSignInWithAppleService: ASAuthorizationControllerPresentationContextProviding {
+    
+    public var window: NSWindow? {
+        guard let window = NSApplication.shared.keyWindow else {
+            return nil
+        }
+        return window
+    }
+    
+    public func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+        return self.window!
+    }
+    
+}
+#endif
