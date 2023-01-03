@@ -50,7 +50,7 @@ public struct AuthService {
     }
     
     @discardableResult
-    public func logout() async throws -> Bool {
+    public static func logout() async throws -> Bool {
         try await withCheckedThrowingContinuation({ continuation in
             logout { result in
                 switch result {
@@ -63,7 +63,7 @@ public struct AuthService {
         })
     }
     
-    private func logout(completion: @escaping (Result<Bool, Error>) -> ()) {
+    private static func logout(completion: @escaping (Result<Bool, Error>) -> ()) {
         DispatchQueue.global(qos: .background).async {
             do {
                 try Auth.auth().signOut()
