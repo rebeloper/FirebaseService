@@ -1,5 +1,5 @@
 //
-//  FirestoreViewContext.swift
+//  FirestoreContext.swift
 //  
 //
 //  Created by Alex Nagy on 22.11.2022.
@@ -8,7 +8,7 @@
 import Foundation
 import FirebaseFirestore
 
-public struct FirestoreViewContext<T: Codable & Firestorable & Equatable> {
+public struct FirestoreContext<T: Codable & Firestorable & Equatable> {
     
     /// Reads a document from a Firestore collection.
     /// - Parameters:
@@ -23,12 +23,27 @@ public struct FirestoreViewContext<T: Codable & Firestorable & Equatable> {
     /// - Parameters:
     ///   - document: The docuemnt to be created.
     ///   - collectionPath: The collection path of the document.
-    @discardableResult public static func create(_ document: T, collectionPath: String) throws -> T {
+    @discardableResult public static func create(_ document: T, collectionPath: String, ifNonExistent: Bool = false) async throws -> T {
         var reference: DocumentReference
         if document.uid != "" {
             reference = Firestore.firestore().collection(collectionPath).document(document.uid)
-            try reference.setData(from: document)
-            return document
+            if ifNonExistent {
+                do {
+                    let document = try await read(document.uid, collectionPath: collectionPath)
+                    return document
+                } catch {
+                    print(error)
+                    if error._code == 1234 {
+                        try reference.setData(from: document)
+                        return document
+                    } else {
+                        throw error
+                    }
+                }
+            } else {
+                try reference.setData(from: document)
+                return document
+            }
         } else {
             reference = Firestore.firestore().collection(collectionPath).document()
             var updatedDocument = document

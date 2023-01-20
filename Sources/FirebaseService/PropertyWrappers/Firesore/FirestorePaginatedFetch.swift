@@ -12,7 +12,7 @@ import FirebaseFirestoreSwift
 /// A property wrapper that fetches a Firestore collection in a paginated way.
 @propertyWrapper
 public struct FirestorePaginatedFetch<T, U: Codable & Firestorable & Equatable, C: Comparable>: DynamicProperty {
-    @StateObject public var manager: FirestorePaginatedFetchManager<T, U, C>
+    @StateObject public var context: FirestorePaginatedFetchContext<T, U, C>
     
     /// The query's configurable properties.
     public struct Configuration<U> {
@@ -35,10 +35,10 @@ public struct FirestorePaginatedFetch<T, U: Codable & Firestorable & Equatable, 
     
     public var wrappedValue: T {
         get {
-            manager.value
+            context.value
         }
         nonmutating set {
-            manager.value = newValue
+            context.value = newValue
         }
     }
     
@@ -56,11 +56,11 @@ public struct FirestorePaginatedFetch<T, U: Codable & Firestorable & Equatable, 
     /// A binding to the request's mutable configuration properties
     public var configuration: Configuration<U> {
         get {
-            manager.configuration
+            context.configuration
         }
         nonmutating set {
-            manager.objectWillChange.send()
-            manager.configuration = newValue
+            context.objectWillChange.send()
+            context.configuration = newValue
         }
     }
     
@@ -85,11 +85,11 @@ public struct FirestorePaginatedFetch<T, U: Codable & Firestorable & Equatable, 
             predicates: predicates,
             decodingFailureStrategy: decodingFailureStrategy
         )
-        _manager = StateObject(wrappedValue: FirestorePaginatedFetchManager<T, U, C>(configuration: configuration))
+        _context = StateObject(wrappedValue: FirestorePaginatedFetchContext<T, U, C>(configuration: configuration))
     }
 }
 
-final public class FirestorePaginatedFetchManager<T, U: Codable & Firestorable & Equatable, C: Comparable>: ObservableObject {
+final public class FirestorePaginatedFetchContext<T, U: Codable & Firestorable & Equatable, C: Comparable>: ObservableObject {
     
     @Published public var value: T
     @Published private var lastDocumentSnapshot: DocumentSnapshot? = nil
@@ -265,18 +265,14 @@ final public class FirestorePaginatedFetchManager<T, U: Codable & Firestorable &
     /// Creates a new element.
     /// - Parameters:
     ///   - element: An element to be created.
-    public func create(_ element: U) throws where T == [U] {
-        try animated {
-            try value.append(element, collectionPath: configuration.path, sortedBy: configuration.sortedBy)
-        }
+    public func create(_ element: U) async throws where T == [U] {
+        try await value.append(element, collectionPath: configuration.path, sortedBy: configuration.sortedBy)
     }
     
     /// Deletes an element.
     /// - Parameter element: The element to be deleted.
     public func delete<U: Codable & Firestorable & Equatable>(_ element: U) throws where T == [U] {
-        try animated {
-            try value.delete(element, collectionPath: configuration.path)
-        }
+        try value.delete(element, collectionPath: configuration.path)
     }
     
     /// Updates an element.
@@ -285,8 +281,6 @@ final public class FirestorePaginatedFetchManager<T, U: Codable & Firestorable &
     ///   - newElement: The updated element.
     ///   - areInIncreasingOrder: Order of the value being fetched.
     public func update<U: Codable & Firestorable & Equatable>(_ element: U, with newElement: U) throws where T == [U] {
-        try animated {
-            try value.update(element, with: newElement, collectionPath: configuration.path)
-        }
+        try value.update(element, with: newElement, collectionPath: configuration.path)
     }
 }

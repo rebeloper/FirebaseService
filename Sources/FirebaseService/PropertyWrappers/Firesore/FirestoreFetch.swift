@@ -12,7 +12,7 @@ import FirebaseFirestoreSwift
 /// A property wrapper that fetches a Firestore collection.
 @propertyWrapper
 public struct FirestoreFetch<T, U: Codable & Firestorable & Equatable, C: Comparable>: DynamicProperty {
-    @StateObject public var manager: FirestoreFetchManager<T, U, C>
+    @StateObject public var context: FirestoreFetchContext<T, U, C>
     
     /// The query's configurable properties.
     public struct Configuration<U> {
@@ -35,10 +35,10 @@ public struct FirestoreFetch<T, U: Codable & Firestorable & Equatable, C: Compar
     
     public var wrappedValue: T {
         get {
-            manager.value
+            context.value
         }
         nonmutating set {
-            manager.value = newValue
+            context.value = newValue
         }
     }
     
@@ -56,11 +56,11 @@ public struct FirestoreFetch<T, U: Codable & Firestorable & Equatable, C: Compar
     /// A binding to the request's mutable configuration properties
     public var configuration: Configuration<U> {
         get {
-            manager.configuration
+            context.configuration
         }
         nonmutating set {
-            manager.objectWillChange.send()
-            manager.configuration = newValue
+            context.objectWillChange.send()
+            context.configuration = newValue
         }
     }
     
@@ -84,11 +84,11 @@ public struct FirestoreFetch<T, U: Codable & Firestorable & Equatable, C: Compar
             predicates: predicates,
             decodingFailureStrategy: decodingFailureStrategy
         )
-        _manager = StateObject(wrappedValue: FirestoreFetchManager<T, U, C>(configuration: configuration))
+        _context = StateObject(wrappedValue: FirestoreFetchContext<T, U, C>(configuration: configuration))
     }
 }
 
-final public class FirestoreFetchManager<T, U: Codable & Firestorable & Equatable, C: Comparable>: ObservableObject {
+final public class FirestoreFetchContext<T, U: Codable & Firestorable & Equatable, C: Comparable>: ObservableObject {
     
     @Published public var value: T
     
@@ -217,18 +217,14 @@ final public class FirestoreFetchManager<T, U: Codable & Firestorable & Equatabl
     /// Creates a new element.
     /// - Parameters:
     ///   - element: An element to be created.
-    public func create(_ element: U) throws where T == [U] {
-        try animated {
-            try value.append(element, collectionPath: configuration.path, sortedBy: configuration.sortedBy)
-        }
+    public func create(_ element: U) async throws where T == [U] {
+        try await value.append(element, collectionPath: configuration.path, sortedBy: configuration.sortedBy)
     }
     
     /// Deletes an element.
     /// - Parameter element: The element to be deleted.
     public func delete(_ element: U) throws where T == [U] {
-        try animated {
-            try value.delete(element, collectionPath: configuration.path)
-        }
+        try value.delete(element, collectionPath: configuration.path)
     }
     
     /// Updates an element.
@@ -236,9 +232,7 @@ final public class FirestoreFetchManager<T, U: Codable & Firestorable & Equatabl
     ///   - element: An element to be updated.
     ///   - newElement: The updated element.
     public func update(_ element: U, with newElement: U) throws where T == [U] {
-        try animated {
-            try value.update(element, with: newElement, collectionPath: configuration.path)
-        }
+        try value.update(element, with: newElement, collectionPath: configuration.path)
     }
 }
 
