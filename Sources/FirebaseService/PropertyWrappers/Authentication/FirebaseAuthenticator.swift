@@ -54,5 +54,9 @@ final public class FirebaseAuthenticatorContext: ObservableObject {
     public func signOut() throws {
         try Auth.auth().signOut()
     }
+    
+    public func sendPasswordResetEmail() async throws {
+        try await Auth.auth().sendPasswordReset(withEmail: value.email)
+    }
 }
 
