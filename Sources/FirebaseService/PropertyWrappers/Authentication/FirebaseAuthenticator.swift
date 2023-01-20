@@ -31,8 +31,8 @@ public struct FirebaseAuthenticator: DynamicProperty {
 final public class FirebaseAuthenticatorContext: ObservableObject {
     
     public struct Credentials {
-        var email: String
-        var password: String
+        public var email: String
+        public var password: String
     }
     
     @Published public var value: Credentials = .init(email: "", password: "")
