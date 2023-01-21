@@ -33,9 +33,16 @@ final public class FirebaseAuthenticatorContext: ObservableObject {
     public struct Credentials {
         public var email: String
         public var password: String
+        public var name: Name
     }
     
-    @Published public var value: Credentials = .init(email: "", password: "")
+    public struct Name {
+        public var first: String
+        public var middle: String
+        public var last: String
+    }
+    
+    @Published public var value: Credentials = .init(email: "", password: "", name: .init(first: "", middle: "", last: ""))
     
     public init() {
         
