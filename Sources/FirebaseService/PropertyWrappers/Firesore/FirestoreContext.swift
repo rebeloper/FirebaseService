@@ -32,9 +32,7 @@ public struct FirestoreContext<T: Codable & Firestorable & Equatable> {
                     let document = try await read(document.uid, collectionPath: collectionPath)
                     return document
                 } catch {
-                    print(error)
-                    print(error._code)
-                    if error._code == 1234 {
+                    if error._code == 4865 {
                         try reference.setData(from: document)
                         return document
                     } else {
