@@ -33,6 +33,7 @@ public struct FirestoreContext<T: Codable & Firestorable & Equatable> {
                     return document
                 } catch {
                     print(error)
+                    print(error._code)
                     if error._code == 1234 {
                         try reference.setData(from: document)
                         return document
