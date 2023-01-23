@@ -9,11 +9,25 @@ import SwiftUI
 import FirebaseAuth
 
 @propertyWrapper
-public struct FirebaseAuthenticator: DynamicProperty {
+public struct FirebaseAuthenticator<Profile: Codable & Firestorable & Equatable>: DynamicProperty {
     
-    @StateObject public var context: FirebaseAuthenticatorContext
+    @StateObject public var context: FirebaseAuthenticatorContext<Profile>
     
-    public var wrappedValue: FirebaseAuthenticatorContext.Credentials {
+    public struct Configuration {
+        public var path: String
+    }
+    
+    public var configuration: Configuration {
+        get {
+            context.configuration
+        }
+        nonmutating set {
+            context.objectWillChange.send()
+            context.configuration = newValue
+        }
+    }
+    
+    public var wrappedValue: FirebaseAuthenticatorContext<Profile>.Credentials {
         get {
             context.value
         }
@@ -22,35 +36,33 @@ public struct FirebaseAuthenticator: DynamicProperty {
         }
     }
     
-    public init() {
-        _context = StateObject(wrappedValue: FirebaseAuthenticatorContext())
+    public init(_ path: String) {
+        let configuration = Configuration(path: path)
+        _context = StateObject(wrappedValue: FirebaseAuthenticatorContext<Profile>(configuration: configuration))
     }
 }
 
 @MainActor
-final public class FirebaseAuthenticatorContext: ObservableObject {
+final public class FirebaseAuthenticatorContext<Profile: Codable & Firestorable & Equatable>: ObservableObject {
     
     public struct Credentials {
         public var email: String
         public var password: String
-        public var name: Name
     }
     
-    public struct Name {
-        public var first: String
-        public var middle: String
-        public var last: String
+    @Published public var value: Credentials = .init(email: "", password: "")
+    
+    internal var configuration: FirebaseAuthenticator<Profile>.Configuration
+    
+    public init(configuration: FirebaseAuthenticator<Profile>.Configuration) {
+        self.configuration = configuration
     }
     
-    @Published public var value: Credentials = .init(email: "", password: "", name: .init(first: "", middle: "", last: ""))
-    
-    public init() {
-        
-    }
-    
-    @discardableResult
-    public func createUser() async throws -> AuthDataResult {
-        try await Auth.auth().createUser(withEmail: value.email, password: value.password)
+    public func signUp(profile: Profile) async throws {
+        let authDataResult = try await Auth.auth().createUser(withEmail: value.email, password: value.password)
+        var profile = profile
+        profile.uid = authDataResult.user.uid
+        try await FirestoreContext.create(profile, collectionPath: configuration.path, ifNonExistent: true)
     }
     
     @discardableResult
