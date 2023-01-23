@@ -7,11 +7,12 @@
 
 import SwiftUI
 import FirebaseAuth
+import Combine
 
 @propertyWrapper
 public struct FirebaseAuthenticator<Profile: Codable & Firestorable & Equatable>: DynamicProperty {
     
-    @StateObject public var context: FirebaseAuthenticatorContext<Profile>
+    @EnvironmentObject public var context: FirebaseAuthenticatorContext<Profile>
     
     public struct Configuration {
         public var path: String
@@ -29,16 +30,35 @@ public struct FirebaseAuthenticator<Profile: Codable & Firestorable & Equatable>
     
     public var wrappedValue: FirebaseAuthenticatorContext<Profile>.Credentials {
         get {
-            context.value
+            context.credentials
         }
         nonmutating set {
-            context.value = newValue
+            context.credentials = newValue
         }
     }
     
-    public init(_ path: String) {
-        let configuration = Configuration(path: path)
+    public init() {
+        
+    }
+}
+
+public struct FireabseAutheticatorView<Content: View, Profile: Codable & Firestorable & Equatable>: View {
+    
+    @StateObject private var authState: AuthState
+    @StateObject public var context: FirebaseAuthenticatorContext<Profile>
+    @ViewBuilder public var content: () -> Content
+    
+    public init(_ profileCollectionPath: String, shouldLogoutUponLaunch: Bool = false, @ViewBuilder content: @escaping () -> Content) {
+        _authState = StateObject(wrappedValue: AuthState(shouldLogoutUponLaunch: shouldLogoutUponLaunch))
+        let configuration = FirebaseAuthenticator<Profile>.Configuration(path: profileCollectionPath)
         _context = StateObject(wrappedValue: FirebaseAuthenticatorContext<Profile>(configuration: configuration))
+        self.content = content
+    }
+    
+    public var body: some View {
+        content()
+            .environmentObject(authState)
+            .environmentObject(context)
     }
 }
 
@@ -50,24 +70,72 @@ final public class FirebaseAuthenticatorContext<Profile: Codable & Firestorable 
         public var password: String
     }
     
-    @Published public var value: Credentials = .init(email: "", password: "")
+    @Published public var credentials: Credentials = .init(email: "", password: "")
     
     internal var configuration: FirebaseAuthenticator<Profile>.Configuration
     
-    public init(configuration: FirebaseAuthenticator<Profile>.Configuration) {
+    @Published public var profile: Profile? = nil
+    @Published public var user: User? = nil
+    @Published public var value: AuthenticationStateValue = .undefined
+    @Published public var currentUserUid: String? = nil
+    @Published public var email: String = ""
+    
+    public var cancellables: Set<AnyCancellable> = []
+    
+    public init(configuration: FirebaseAuthenticator<Profile>.Configuration, shouldLogoutUponLaunch: Bool = false) {
+        print("AuthState init")
         self.configuration = configuration
+        startAuthListener()
+        logoutIfNeeded(shouldLogoutUponLaunch)
+    }
+    
+    private func startAuthListener() {
+        let promise = AuthListener.listen()
+        promise.sink { _ in } receiveValue: { result in
+            self.user = result.user
+            self.currentUserUid = result.user?.uid
+            self.email = result.user?.email ?? ""
+            self.value = result.user != nil ? .authenticated : .notAuthenticated
+            if let uid = result.user?.uid {
+                Task {
+                    do {
+                        try await self.fetchProfile(with: uid)
+                    } catch {
+                        print(error.localizedDescription)
+                    }
+                }
+            }
+        }.store(in: &cancellables)
+    }
+    
+    private func logoutIfNeeded(_ shouldLogoutUponLaunch: Bool) {
+        if shouldLogoutUponLaunch {
+            Task {
+                print("AuthState: logging out upon launch...")
+                do {
+                    try signOut()
+                    print("Logged out")
+                } catch {
+                    print(error.localizedDescription)
+                }
+            }
+        }
+    }
+    
+    public func fetchProfile(with uid: String) async throws {
+        self.profile = try await FirestoreContext.read(uid, collectionPath: configuration.path)
     }
     
     public func signUp(profile: Profile) async throws {
-        let authDataResult = try await Auth.auth().createUser(withEmail: value.email, password: value.password)
+        let authDataResult = try await Auth.auth().createUser(withEmail: credentials.email, password: credentials.password)
         var profile = profile
         profile.uid = authDataResult.user.uid
-        try await FirestoreContext.create(profile, collectionPath: configuration.path, ifNonExistent: true)
+        self.profile = try await FirestoreContext.create(profile, collectionPath: configuration.path, ifNonExistent: true)
     }
     
     @discardableResult
     public func signIn() async throws -> AuthDataResult {
-        try await Auth.auth().signIn(withEmail: value.email, password: value.password)
+        try await Auth.auth().signIn(withEmail: credentials.email, password: credentials.password)
     }
     
     public func signOut() throws {
@@ -75,7 +143,7 @@ final public class FirebaseAuthenticatorContext<Profile: Codable & Firestorable 
     }
     
     public func sendPasswordResetEmail() async throws {
-        try await Auth.auth().sendPasswordReset(withEmail: value.email)
+        try await Auth.auth().sendPasswordReset(withEmail: credentials.email)
     }
 }
 
