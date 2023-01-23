@@ -7,7 +7,6 @@
 
 import SwiftUI
 import FirebaseAuth
-import Combine
 
 @propertyWrapper
 public struct FirebaseAuthenticator<Profile: Codable & Firestorable & Equatable>: DynamicProperty {
@@ -37,9 +36,7 @@ public struct FirebaseAuthenticator<Profile: Codable & Firestorable & Equatable>
         }
     }
     
-    public init() {
-        
-    }
+    public init() { }
 }
 
 public struct FireabseAutheticatorView<Content: View, Profile: Codable & Firestorable & Equatable>: View {
@@ -80,26 +77,21 @@ final public class FirebaseAuthenticatorContext<Profile: Codable & Firestorable 
     @Published public var currentUserUid: String? = nil
     @Published public var email: String = ""
     
-    public var cancellables: Set<AnyCancellable> = []
+    public var handle: AuthStateDidChangeListenerHandle?
     
     public init(configuration: FirebaseAuthenticator<Profile>.Configuration, shouldLogoutUponLaunch: Bool = false) {
-        print("AuthState init")
         self.configuration = configuration
         startAuthListener()
         logoutIfNeeded(shouldLogoutUponLaunch)
     }
     
-    public var handle: AuthStateDidChangeListenerHandle?
-    
     private func removeStateDidChangeListener() {
         if let handle {
-            print("Removing StateDidChangeListener handle...")
             Auth.auth().removeStateDidChangeListener(handle)
         }
     }
     
     private func startAuthListener() {
-        print("Starting auth state listener...")
         removeStateDidChangeListener()
         handle = Auth.auth().addStateDidChangeListener({ auth, user in
             self.user = user
