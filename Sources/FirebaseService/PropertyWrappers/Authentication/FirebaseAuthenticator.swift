@@ -99,7 +99,7 @@ final public class FirebaseAuthenticatorContext<Profile: Codable & Firestorable 
     }
     
     private func startAuthListener() {
-        
+        print("Starting auth state listener...")
         removeStateDidChangeListener()
         handle = Auth.auth().addStateDidChangeListener({ auth, user in
             self.user = user
