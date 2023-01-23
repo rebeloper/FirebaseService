@@ -89,14 +89,24 @@ final public class FirebaseAuthenticatorContext<Profile: Codable & Firestorable 
         logoutIfNeeded(shouldLogoutUponLaunch)
     }
     
+    public var handle: AuthStateDidChangeListenerHandle?
+    
+    private func removeStateDidChangeListener() {
+        if let handle {
+            print("Removing StateDidChangeListener handle...")
+            Auth.auth().removeStateDidChangeListener(handle)
+        }
+    }
+    
     private func startAuthListener() {
-        let promise = AuthListener.listen()
-        promise.sink { _ in } receiveValue: { result in
-            self.user = result.user
-            self.currentUserUid = result.user?.uid
-            self.email = result.user?.email ?? ""
-            self.value = result.user != nil ? .authenticated : .notAuthenticated
-            if let uid = result.user?.uid {
+        
+        removeStateDidChangeListener()
+        handle = Auth.auth().addStateDidChangeListener({ auth, user in
+            self.user = user
+            self.currentUserUid = user?.uid
+            self.email = user?.email ?? ""
+            self.value = user != nil ? .authenticated : .notAuthenticated
+            if let uid = user?.uid {
                 Task {
                     do {
                         try await self.fetchProfile(with: uid)
@@ -105,7 +115,7 @@ final public class FirebaseAuthenticatorContext<Profile: Codable & Firestorable 
                     }
                 }
             }
-        }.store(in: &cancellables)
+        })
     }
     
     private func logoutIfNeeded(_ shouldLogoutUponLaunch: Bool) {
