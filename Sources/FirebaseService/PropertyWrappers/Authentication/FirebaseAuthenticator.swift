@@ -39,7 +39,7 @@ public struct FirebaseAuthenticator<Profile: Codable & Firestorable & Equatable>
     public init() { }
 }
 
-public struct FireabseAutheticatorView<Content: View, Profile: Codable & Firestorable & Equatable>: View {
+public struct FirebaseAutheticatorView<Content: View, Profile: Codable & Firestorable & Equatable>: View {
     
     @StateObject private var authState: AuthState
     @StateObject public var context: FirebaseAuthenticatorContext<Profile>
