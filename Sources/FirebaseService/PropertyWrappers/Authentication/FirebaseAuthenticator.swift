@@ -8,59 +8,29 @@
 import SwiftUI
 import FirebaseAuth
 
-@propertyWrapper
-public struct FirebaseAuthenticator<Profile: Codable & Firestorable & Equatable>: DynamicProperty {
-    
-    @EnvironmentObject public var context: FirebaseAuthenticatorContext<Profile>
-    
-    public struct Configuration {
-        public var path: String
-    }
-    
-    public var configuration: Configuration {
-        get {
-            context.configuration
-        }
-        nonmutating set {
-            context.objectWillChange.send()
-            context.configuration = newValue
-        }
-    }
-    
-    public var wrappedValue: FirebaseAuthenticatorContext<Profile>.Credentials {
-        get {
-            context.credentials
-        }
-        nonmutating set {
-            context.credentials = newValue
-        }
-    }
-    
-    public init() { }
-}
-
 public struct FirebaseAutheticatorView<Content: View, Profile: Codable & Firestorable & Equatable>: View {
     
-    @StateObject private var authState: AuthState
-    @StateObject public var context: FirebaseAuthenticatorContext<Profile>
+    @StateObject public var authenticator: FirebaseAuthenticator<Profile>
     @ViewBuilder public var content: () -> Content
     
     public init(_ profileCollectionPath: String, shouldLogoutUponLaunch: Bool = false, @ViewBuilder content: @escaping () -> Content) {
-        _authState = StateObject(wrappedValue: AuthState(shouldLogoutUponLaunch: shouldLogoutUponLaunch))
         let configuration = FirebaseAuthenticator<Profile>.Configuration(path: profileCollectionPath)
-        _context = StateObject(wrappedValue: FirebaseAuthenticatorContext<Profile>(configuration: configuration))
+        _authenticator = StateObject(wrappedValue: FirebaseAuthenticator<Profile>(configuration: configuration))
         self.content = content
     }
     
     public var body: some View {
         content()
-            .environmentObject(authState)
-            .environmentObject(context)
+            .environmentObject(authenticator)
     }
 }
 
 @MainActor
-final public class FirebaseAuthenticatorContext<Profile: Codable & Firestorable & Equatable>: ObservableObject {
+final public class FirebaseAuthenticator<Profile: Codable & Firestorable & Equatable>: ObservableObject {
+    
+    public struct Configuration {
+        public var path: String
+    }
     
     public struct Credentials {
         public var email: String
@@ -69,7 +39,7 @@ final public class FirebaseAuthenticatorContext<Profile: Codable & Firestorable 
     
     @Published public var credentials: Credentials = .init(email: "", password: "")
     
-    internal var configuration: FirebaseAuthenticator<Profile>.Configuration
+    internal var configuration: Configuration
     
     @Published public var profile: Profile? = nil
     @Published public var user: User? = nil
@@ -79,7 +49,7 @@ final public class FirebaseAuthenticatorContext<Profile: Codable & Firestorable 
     
     public var handle: AuthStateDidChangeListenerHandle?
     
-    public init(configuration: FirebaseAuthenticator<Profile>.Configuration, shouldLogoutUponLaunch: Bool = false) {
+    public init(configuration: Configuration, shouldLogoutUponLaunch: Bool = false) {
         self.configuration = configuration
         startAuthListener()
         logoutIfNeeded(shouldLogoutUponLaunch)
