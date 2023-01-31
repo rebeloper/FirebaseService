@@ -8,7 +8,7 @@
 import SwiftUI
 import FirebaseAuth
 
-public struct FirebaseAutheticatorView<Content: View, Profile: Codable & Firestorable & Equatable>: View {
+public struct FirebaseAuthenticatorView<Content: View, Profile: Codable & Firestorable & Equatable>: View {
     
     @StateObject public var authenticator: FirebaseAuthenticator<Profile>
     @ViewBuilder public var content: () -> Content
