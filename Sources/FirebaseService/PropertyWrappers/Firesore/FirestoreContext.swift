@@ -7,6 +7,7 @@
 
 import Foundation
 import FirebaseFirestore
+import FirebaseFirestoreSwift
 
 public struct FirestoreContext<T: Codable & Firestorable & Equatable> {
     
@@ -17,6 +18,19 @@ public struct FirestoreContext<T: Codable & Firestorable & Equatable> {
     @discardableResult public static func read(_ uid: String, collectionPath: String) async throws -> T {
         let reference = Firestore.firestore().collection(collectionPath)
         return try await reference.document(uid).getDocument(as: T.self)
+    }
+    
+    /// Reads a document from a Firestore collection.
+    /// - Parameters:
+    ///   - uid: The uid of the document to be read.
+    ///   - collectionPath: The collection path of the document.
+    @discardableResult public static func query(collectionPath: String, predicates: [QueryPredicate]) async throws -> [T] {
+        var query: Query = getQuery(path: collectionPath, predicates: predicates)
+        let snapshot = try await query.getDocuments()
+        let documents = snapshot.documents.compactMap { document in
+            try? document.data(as: T.self)
+        }
+        return documents
     }
     
     /// Creates a Firestore document at a collection path.
@@ -72,5 +86,39 @@ public struct FirestoreContext<T: Codable & Firestorable & Equatable> {
             try await reference.document(document.uid).delete()
         }
         return document
+    }
+    
+    private static func getQuery(path: String, predicates: [QueryPredicate]) -> Query {
+        var query: Query = Firestore.firestore().collection(path)
+        
+        for predicate in predicates {
+            switch predicate {
+            case let .isEqualTo(field, value):
+                query = query.whereField(field, isEqualTo: value)
+            case let .isIn(field, values):
+                query = query.whereField(field, in: values)
+            case let .isNotIn(field, values):
+                query = query.whereField(field, notIn: values)
+            case let .arrayContains(field, value):
+                query = query.whereField(field, arrayContains: value)
+            case let .arrayContainsAny(field, values):
+                query = query.whereField(field, arrayContainsAny: values)
+            case let .isLessThan(field, value):
+                query = query.whereField(field, isLessThan: value)
+            case let .isGreaterThan(field, value):
+                query = query.whereField(field, isGreaterThan: value)
+            case let .isLessThanOrEqualTo(field, value):
+                query = query.whereField(field, isLessThanOrEqualTo: value)
+            case let .isGreaterThanOrEqualTo(field, value):
+                query = query.whereField(field, isGreaterThanOrEqualTo: value)
+            case let .orderBy(field, value):
+                query = query.order(by: field, descending: value)
+            case let .limitTo(field):
+                query = query.limit(to: field)
+            case let .limitToLast(field):
+                query = query.limit(toLast: field)
+            }
+        }
+        return query
     }
 }
