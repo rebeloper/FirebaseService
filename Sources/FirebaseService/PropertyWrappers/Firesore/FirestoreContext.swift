@@ -76,14 +76,14 @@ public struct FirestoreContext<T: Codable & Firestorable & Equatable> {
         return document
     }
     
-    public static func increase(field: String, by: Int = 1, forDocument document: T, atCollectionPath collectionPath: String) async throws {
+    public static func increase(_ field: String, by: Int = 1, forDocument document: T, atCollectionPath collectionPath: String) async throws {
         guard by > 0 else { return }
-        try await Firestore.firestore().collection(atCollectionPath).document(document.uid).updateData([
+        try await Firestore.firestore().collection(collectionPath).document(document.uid).updateData([
             field: FieldValue.increment(Int64(by))
         ])
     }
     
-    public static func decrease(field: String, by: Int = 1, forDocument document: T, atCollectionPath collectionPath: String) async throws {
+    public static func decrease(_ field: String, by: Int = 1, forDocument document: T, atCollectionPath collectionPath: String) async throws {
         guard by > 0 else { return }
         try await Firestore.firestore().collection(collectionPath).document(document.uid).updateData([
             field: FieldValue.increment(Int64(-by))
