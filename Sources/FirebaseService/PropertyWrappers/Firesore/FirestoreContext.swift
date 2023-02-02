@@ -22,8 +22,8 @@ public struct FirestoreContext<T: Codable & Firestorable & Equatable> {
     
     /// Reads a document from a Firestore collection.
     /// - Parameters:
-    ///   - uid: The uid of the document to be read.
     ///   - collectionPath: The collection path of the document.
+    ///   - predicates: The predicates for the query
     @discardableResult public static func query(collectionPath: String, predicates: [QueryPredicate]) async throws -> [T] {
         var query: Query = getQuery(path: collectionPath, predicates: predicates)
         let snapshot = try await query.getDocuments()
@@ -74,6 +74,20 @@ public struct FirestoreContext<T: Codable & Firestorable & Equatable> {
         let reference = Firestore.firestore().collection(collectionPath)
         try reference.document(document.uid).setData(from: document, merge: true)
         return document
+    }
+    
+    public static func increase(field: String, by: Int = 1, for document: T, at collectionPath: String) async throws {
+        guard by > 0 else { return }
+        try await Firestore.firestore().collection(collectionPath).document(document.uid).updateData([
+            field: FieldValue.increment(Int64(by))
+        ])
+    }
+    
+    public static func decrease(field: String, by: Int = 1, for document: T, at collectionPath: String) async throws {
+        guard by > 0 else { return }
+        try await Firestore.firestore().collection(collectionPath).document(document.uid).updateData([
+            field: FieldValue.increment(Int64(-by))
+        ])
     }
     
     /// Deletes a document for a Firestore collection.
