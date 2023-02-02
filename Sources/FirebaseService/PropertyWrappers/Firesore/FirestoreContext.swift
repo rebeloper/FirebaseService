@@ -76,6 +76,12 @@ public struct FirestoreContext<T: Codable & Firestorable & Equatable> {
         return document
     }
     
+    /// Increases a field value by the amount specified inside a document.
+    /// - Parameters:
+    ///   - field: The field to be increased.
+    ///   - by: The amount to decrease. Defaults to 1.
+    ///   - document: The document.
+    ///   - collectionPath: The collection path of the document.
     public static func increase(_ field: String, by: Int = 1, forDocument document: T, atCollectionPath collectionPath: String) async throws {
         guard by > 0 else { return }
         try await Firestore.firestore().collection(collectionPath).document(document.uid).updateData([
@@ -83,9 +89,41 @@ public struct FirestoreContext<T: Codable & Firestorable & Equatable> {
         ])
     }
     
+    // Increases a field value by the amount specified inside a document.
+    /// - Parameters:
+    ///   - field: The field to be increased.
+    ///   - by: The amount to decrease. Defaults to 1.
+    ///   - uid: The uid of the document.
+    ///   - collectionPath: The collection path of the document.
+    public static func increase(_ field: String, by: Int = 1, forUid uid: String, atCollectionPath collectionPath: String) async throws {
+        guard by > 0 else { return }
+        try await Firestore.firestore().collection(collectionPath).document(uid).updateData([
+            field: FieldValue.increment(Int64(by))
+        ])
+    }
+    
+    /// Decreases a field value by the amount specified inside a document.
+    /// - Parameters:
+    ///   - field: The field to be decreased.
+    ///   - by: The amount to decrease. Defaults to 1.
+    ///   - document: The document.
+    ///   - collectionPath: The collection path of the document.
     public static func decrease(_ field: String, by: Int = 1, forDocument document: T, atCollectionPath collectionPath: String) async throws {
         guard by > 0 else { return }
         try await Firestore.firestore().collection(collectionPath).document(document.uid).updateData([
+            field: FieldValue.increment(Int64(-by))
+        ])
+    }
+    
+    /// Decreases a field value by the amount specified inside a document.
+    /// - Parameters:
+    ///   - field: The field to be decreased.
+    ///   - by: The amount to decrease. Defaults to 1.
+    ///   - uid: The uid of the document.
+    ///   - collectionPath: The collection path of the document.
+    public static func decrease(_ field: String, by: Int = 1, forUid uid: String, atCollectionPath collectionPath: String) async throws {
+        guard by > 0 else { return }
+        try await Firestore.firestore().collection(collectionPath).document(uid).updateData([
             field: FieldValue.increment(Int64(-by))
         ])
     }
@@ -100,6 +138,17 @@ public struct FirestoreContext<T: Codable & Firestorable & Equatable> {
             try await reference.document(document.uid).delete()
         }
         return document
+    }
+    
+    /// Deletes a document for a Firestore collection.
+    /// - Parameters:
+    ///   - uid: The uid of the document to be deleted.
+    ///   - collectionPath: The collection path of the document.
+    public static func delete(atUid uid: String, collectionPath: String) throws {
+        let reference = Firestore.firestore().collection(collectionPath)
+        Task {
+            try await reference.document(uid).delete()
+        }
     }
     
     private static func getQuery(path: String, predicates: [QueryPredicate]) -> Query {
