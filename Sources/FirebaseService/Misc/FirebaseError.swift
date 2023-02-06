@@ -1,6 +1,6 @@
 //
 //  FirebaseError.swift
-//  
+//
 //
 //  Created by Alex Nagy on 20.04.2021.
 //

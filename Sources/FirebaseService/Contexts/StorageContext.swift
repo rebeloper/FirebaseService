@@ -1,5 +1,5 @@
 //
-//  StorageService.swift
+//  StorageContext.swift
 //  
 //
 //  Created by Alex Nagy on 20.04.2021.
@@ -8,7 +8,7 @@
 import SwiftUI
 import FirebaseStorage
 
-public class StorageService {
+public class StorageContext {
     
 #if os(iOS)
     public static func save(image: UIImage, folderPath: String, compressionQuality: CGFloat = 1.0, completion: @escaping (Result<URL, Error>) -> ()) {
@@ -48,14 +48,14 @@ public class StorageService {
 #if os(iOS)
     public static func handleImageChange(newImage: UIImage, folderPath: String, compressionQuality: CGFloat = 1.0, oldImageUrl: String, completion: @escaping (Result<URL, Error>) -> ()) {
         guard oldImageUrl.contains("https") else {
-            print("StorageService: Old image url does not contain https. No old image to delete. Saving new image...")
+            print("StorageContext: Old image url does not contain https. No old image to delete. Saving new image...")
             save(image: newImage, folderPath: folderPath, compressionQuality: compressionQuality, completion: completion)
             return
         }
         delete(at: oldImageUrl) { (result) in
             switch result {
             case .success(let objectFound):
-                print("StorageService: Object to be deleted was found: \(objectFound)")
+                print("StorageContext: Object to be deleted was found: \(objectFound)")
                 if objectFound {
                     save(image: newImage, folderPath: folderPath, compressionQuality: compressionQuality, completion: completion)
                 } else {
@@ -71,14 +71,14 @@ public class StorageService {
 #if os(macOS)
     public static func handleImageChange(newImage: NSImage, folderPath: String, oldImageUrl: String, completion: @escaping (Result<URL, Error>) -> ()) {
         guard oldImageUrl.contains("https") else {
-            print("StorageService: Old image url does not contain https. No old image to delete. Saving new image...")
+            print("StorageContext: Old image url does not contain https. No old image to delete. Saving new image...")
             save(image: newImage, folderPath: folderPath, completion: completion)
             return
         }
         delete(at: oldImageUrl) { (result) in
             switch result {
             case .success(let objectFound):
-                print("StorageService: Object to be deleted was found: \(objectFound)")
+                print("StorageContext: Object to be deleted was found: \(objectFound)")
                 if objectFound {
                     save(image: newImage, folderPath: folderPath, completion: completion)
                 } else {
@@ -93,14 +93,14 @@ public class StorageService {
     
     public static func handleDataChange(newData: Data, folderPath: String, oldDataUrl: String, completion: @escaping (Result<URL, Error>) -> ()) {
         guard oldDataUrl.contains("https") else {
-            print("StorageService: Old data url does not contain https. No old data to delete. Saving new data...")
+            print("StorageContext: Old data url does not contain https. No old data to delete. Saving new data...")
             save(data: newData, folderPath: folderPath, completion: completion)
             return
         }
         delete(at: oldDataUrl) { (result) in
             switch result {
             case .success(let objectFound):
-                print("StorageService: Object to be deleted was found: \(objectFound)")
+                print("StorageContext: Object to be deleted was found: \(objectFound)")
                 if objectFound {
                     save(data: newData, folderPath: folderPath, completion: completion)
                 } else {
@@ -246,14 +246,14 @@ public class StorageService {
         if index < urls.count {
             let url = urls[index]
             if url == "" {
-                print("StorageService: Delete url is empty string - skipping delete")
+                print("StorageContext: Delete url is empty string - skipping delete")
                 completion(.success(true))
                 return
             }
             delete(at: url) { (result) in
                 switch result {
                 case .success(let finished):
-                    print("StorageService: Deleted at url: \(url) - \(finished)")
+                    print("StorageContext: Deleted at url: \(url) - \(finished)")
                 case .failure(let err):
                     completion(.failure(err))
                 }

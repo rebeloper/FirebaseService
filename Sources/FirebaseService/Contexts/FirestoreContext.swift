@@ -8,6 +8,7 @@
 import Foundation
 import FirebaseFirestore
 import FirebaseFirestoreSwift
+import SwiftUI
 
 public struct FirestoreContext<T: Codable & Firestorable & Equatable> {
     
@@ -25,7 +26,24 @@ public struct FirestoreContext<T: Codable & Firestorable & Equatable> {
     ///   - collectionPath: The collection path of the document.
     ///   - predicates: The predicates for the query
     @discardableResult public static func query(collectionPath: String, predicates: [QueryPredicate]) async throws -> [T] {
-        var query: Query = getQuery(path: collectionPath, predicates: predicates)
+        let query: Query = getQuery(path: collectionPath, predicates: predicates)
+        let snapshot = try await query.getDocuments()
+        let documents = snapshot.documents.compactMap { document in
+            try? document.data(as: T.self)
+        }
+        return documents
+    }
+    
+    /// Reads a document from a Firestore collection in a paginated way. Must containe .limitTo and .orderBy predicates.
+    /// - Parameters:
+    ///   - collectionPath: The collection path of the document.
+    ///   - predicates: The predicates for the query
+    ///   - lastDocumentSnapshot: The last document snapshot
+    @discardableResult public static func query(collectionPath: String, predicates: [QueryPredicate], lastDocumentSnapshot: Binding<DocumentSnapshot?>) async throws -> [T] {
+        let query: Query = getQuery(path: collectionPath, predicates: predicates)
+        if let lastDocumentSnapshot = lastDocumentSnapshot.wrappedValue {
+            query.start(afterDocument: lastDocumentSnapshot)
+        }
         let snapshot = try await query.getDocuments()
         let documents = snapshot.documents.compactMap { document in
             try? document.data(as: T.self)
