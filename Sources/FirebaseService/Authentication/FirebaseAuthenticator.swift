@@ -7,8 +7,9 @@
 
 import SwiftUI
 import FirebaseAuth
+import AuthenticationServices
 
-public struct FirebaseAuthenticatorView<Content: View, Profile: Codable & Firestorable & Equatable>: View {
+public struct FirebaseAuthenticatorView<Content: View, Profile: Codable & Firestorable & Nameable & Equatable>: View {
     
     @StateObject public var authenticator: FirebaseAuthenticator<Profile>
     @ViewBuilder public var content: () -> Content
@@ -25,8 +26,7 @@ public struct FirebaseAuthenticatorView<Content: View, Profile: Codable & Firest
     }
 }
 
-@MainActor
-final public class FirebaseAuthenticator<Profile: Codable & Firestorable & Equatable>: ObservableObject {
+final public class FirebaseAuthenticator<Profile: Codable & Firestorable & Nameable & Equatable>: NSObject, ObservableObject, ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding {
     
     public struct Configuration {
         public var path: String
@@ -51,6 +51,7 @@ final public class FirebaseAuthenticator<Profile: Codable & Firestorable & Equat
     
     public init(configuration: Configuration, shouldLogoutUponLaunch: Bool = false) {
         self.configuration = configuration
+        super.init()
         startAuthListener()
         logoutIfNeeded(shouldLogoutUponLaunch)
     }
@@ -117,5 +118,91 @@ final public class FirebaseAuthenticator<Profile: Codable & Firestorable & Equat
     public func sendPasswordResetEmail() async throws {
         try await Auth.auth().sendPasswordReset(withEmail: credentials.email)
     }
+    
+
+    // MARK: - Sign in with Apple
+    
+    private var onContinueWithApple: ((Result<Profile, Error>) -> ())? = nil
+    
+    fileprivate var currentNonce: String?
+    
+    public func continueWithApple(profile: Profile) async throws {
+        let profile = try await withCheckedThrowingContinuation({ continuation in
+            continueWithApple(profile: profile) { result in
+                continuation.resume(with: result)
+            }
+        })
+        self.profile = try await FirestoreContext.create(profile, collectionPath: configuration.path, ifNonExistent: true)
+    }
+    
+    private func continueWithApple(profile: Profile, onContinueWithApple: @escaping (Result<Profile, Error>) -> ()) {
+        
+        self.profile = profile
+        self.onContinueWithApple = onContinueWithApple
+        
+        let nonce = FirebaseSignInWithAppleUtils.randomNonceString()
+        currentNonce = nonce
+        let appleIDProvider = ASAuthorizationAppleIDProvider()
+        let request = appleIDProvider.createRequest()
+        request.requestedScopes = [.fullName, .email]
+        request.nonce = FirebaseSignInWithAppleUtils.sha256(nonce)
+        
+        let authorizationController = ASAuthorizationController(authorizationRequests: [request])
+        authorizationController.delegate = self
+        authorizationController.presentationContextProvider = self
+        authorizationController.performRequests()
+    }
+    
+    // MARK: - ASAuthorizationControllerDelegate
+    
+    public func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
+        FirebaseSignInWithAppleUtils.createToken(from: authorization, currentNonce: currentNonce) { result in
+            switch result {
+            case .success(let firebaseSignInWithAppleResult):
+                guard var profile = self.profile else { return }
+                profile.uid = firebaseSignInWithAppleResult.uid
+                profile.firstName = firebaseSignInWithAppleResult.token.appleIDCredential.fullName?.givenName ?? ""
+                profile.middleName = firebaseSignInWithAppleResult.token.appleIDCredential.fullName?.middleName ?? ""
+                profile.lastName = firebaseSignInWithAppleResult.token.appleIDCredential.fullName?.familyName ?? ""
+                self.onContinueWithApple?(.success(profile))
+            case .failure(let error):
+                self.onContinueWithApple?(.failure(error))
+            }
+        }
+    }
+    
+    public func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
+        onContinueWithApple?(.failure(error))
+    }
+    
+    // MARK: - ASAuthorizationControllerPresentationContextProviding
+    
+#if os(iOS)
+    public var window: UIWindow? {
+        guard let scene = UIApplication.shared.connectedScenes.first,
+              let windowSceneDelegate = scene.delegate as? UIWindowSceneDelegate,
+              let window = windowSceneDelegate.window else {
+            return nil
+        }
+        return window
+    }
+    
+    public func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+        return self.window!
+    }
+#endif
+    
+#if os(macOS)
+    public var window: NSWindow? {
+        guard let window = NSApplication.shared.keyWindow else {
+            return nil
+        }
+        return window
+    }
+    
+    public func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+        return self.window!
+    }
+#endif
 }
 

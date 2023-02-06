@@ -10,7 +10,6 @@ import AuthenticationServices
 
 public struct FirebaseSignInWithAppleToken {
     public let appleIDCredential: ASAuthorizationAppleIDCredential
-    public let fullName: String
     public let nonce: String
     public let idTokenString: String
 }

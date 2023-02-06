@@ -12,23 +12,6 @@ import FirebaseAuth
 
 public struct FirebaseSignInWithAppleUtils {
     
-    static func getFullName(from appleIDCredential: ASAuthorizationAppleIDCredential) -> String {
-        var name = ""
-        let fullName = appleIDCredential.fullName
-        let givenName = fullName?.givenName ?? ""
-        let middleName = fullName?.middleName ?? ""
-        let familyName = fullName?.familyName ?? ""
-        let names = [givenName, middleName, familyName]
-        let filteredNames = names.filter {$0 != ""}
-        for i in 0..<filteredNames.count {
-            name += filteredNames[i]
-            if i != filteredNames.count - 1 {
-                name += " "
-            }
-        }
-        return name
-    }
-    
     // Adapted from https://auth0.com/docs/api-auth/tutorials/nonce#generate-a-cryptographically-random-nonce
     static func randomNonceString(length: Int = 32) -> String {
         precondition(length > 0)
@@ -112,7 +95,7 @@ public struct FirebaseSignInWithAppleUtils {
                 return
             }
             
-            let token = FirebaseSignInWithAppleToken(appleIDCredential: appleIDCredential, fullName: getFullName(from: appleIDCredential), nonce: nonce, idTokenString: idTokenString)
+            let token = FirebaseSignInWithAppleToken(appleIDCredential: appleIDCredential, nonce: nonce, idTokenString: idTokenString)
             signInToFirebase(with: token) { result in
                 switch result {
                 case .success(let firebaseSignInWithAppleResult):
