@@ -49,6 +49,7 @@ final public class FirebaseAuthenticator<Profile: Codable & Firestorable & Namea
     
     public var handle: AuthStateDidChangeListenerHandle?
     
+    @MainActor
     public init(configuration: Configuration, shouldLogoutUponLaunch: Bool = false) {
         self.configuration = configuration
         super.init()
@@ -56,12 +57,14 @@ final public class FirebaseAuthenticator<Profile: Codable & Firestorable & Namea
         logoutIfNeeded(shouldLogoutUponLaunch)
     }
     
+    @MainActor
     private func removeStateDidChangeListener() {
         if let handle {
             Auth.auth().removeStateDidChangeListener(handle)
         }
     }
     
+    @MainActor
     private func startAuthListener() {
         removeStateDidChangeListener()
         handle = Auth.auth().addStateDidChangeListener({ auth, user in
@@ -81,24 +84,25 @@ final public class FirebaseAuthenticator<Profile: Codable & Firestorable & Namea
         })
     }
     
+    @MainActor
     private func logoutIfNeeded(_ shouldLogoutUponLaunch: Bool) {
         if shouldLogoutUponLaunch {
-            Task {
-                print("AuthState: logging out upon launch...")
-                do {
-                    try signOut()
-                    print("Logged out")
-                } catch {
-                    print(error.localizedDescription)
-                }
+            print("AuthState: logging out upon launch...")
+            do {
+                try signOut()
+                print("Logged out")
+            } catch {
+                print(error.localizedDescription)
             }
         }
     }
     
+    @MainActor
     public func fetchProfile(with uid: String) async throws {
         self.profile = try await FirestoreContext.read(uid, collectionPath: configuration.path)
     }
     
+    @MainActor
     public func signUp(profile: Profile) async throws {
         let authDataResult = try await Auth.auth().createUser(withEmail: credentials.email, password: credentials.password)
         var profile = profile
@@ -106,15 +110,18 @@ final public class FirebaseAuthenticator<Profile: Codable & Firestorable & Namea
         self.profile = try await FirestoreContext.create(profile, collectionPath: configuration.path, ifNonExistent: true)
     }
     
+    @MainActor
     @discardableResult
     public func signIn() async throws -> AuthDataResult {
         try await Auth.auth().signIn(withEmail: credentials.email, password: credentials.password)
     }
     
+    @MainActor
     public func signOut() throws {
         try Auth.auth().signOut()
     }
     
+    @MainActor
     public func sendPasswordResetEmail() async throws {
         try await Auth.auth().sendPasswordReset(withEmail: credentials.email)
     }
@@ -126,6 +133,7 @@ final public class FirebaseAuthenticator<Profile: Codable & Firestorable & Namea
     
     fileprivate var currentNonce: String?
     
+    @MainActor
     public func continueWithApple(profile: Profile) async throws {
         let profile = try await withCheckedThrowingContinuation({ continuation in
             continueWithApple(profile: profile) { result in
@@ -135,6 +143,7 @@ final public class FirebaseAuthenticator<Profile: Codable & Firestorable & Namea
         self.profile = try await FirestoreContext.create(profile, collectionPath: configuration.path, ifNonExistent: true)
     }
     
+    @MainActor
     private func continueWithApple(profile: Profile, onContinueWithApple: @escaping (Result<Profile, Error>) -> ()) {
         
         self.profile = profile
@@ -155,6 +164,7 @@ final public class FirebaseAuthenticator<Profile: Codable & Firestorable & Namea
     
     // MARK: - ASAuthorizationControllerDelegate
     
+    @MainActor
     public func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
         FirebaseSignInWithAppleUtils.createToken(from: authorization, currentNonce: currentNonce) { result in
             switch result {
@@ -171,6 +181,7 @@ final public class FirebaseAuthenticator<Profile: Codable & Firestorable & Namea
         }
     }
     
+    @MainActor
     public func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
         onContinueWithApple?(.failure(error))
     }
