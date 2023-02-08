@@ -17,14 +17,14 @@ public struct FirebaseSignInWithAppleButton<Profile: Codable & Firestorable & Na
     
     @State private var currentNonce: String? = nil
     
-    @State private var profile: Profile? = nil
+    @Binding public var profile: Profile
     
     @EnvironmentObject private var authenticator: FirebaseAuthenticator<Profile>
     
-    public init(label: SignInWithAppleButton.Label = .signIn, requestedScopes: [ASAuthorization.Scope]? = [.fullName, .email], profile: Profile, onCompletion: @escaping ((Result<Profile, Error>) -> Void) = {_ in}) {
+    public init(label: SignInWithAppleButton.Label = .signIn, requestedScopes: [ASAuthorization.Scope]? = [.fullName, .email], profile: Binding<Profile>, onCompletion: @escaping ((Result<Profile, Error>) -> Void) = {_ in}) {
         self.label = label
         self.requestedScopes = requestedScopes
-        self._profile = State(wrappedValue: profile)
+        self._profile = profile
         self.onCompletion = onCompletion
     }
     
