@@ -1,4 +1,4 @@
-// swift-tools-version:5.5
+// swift-tools-version: 5.7
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "FirebaseService",
     platforms: [
-        .iOS(.v15), .macOS(.v11)
+        .iOS(.v16), .macOS(.v13)
     ],
     products: [
         // Products define the executables and libraries a package produces, and make them visible to other packages.
@@ -17,7 +17,7 @@ let package = Package(
     dependencies: [
         // Dependencies declare other packages that this package depends on.
         // .package(url: /* package url */, from: "1.0.0"),
-        .package(name: "Firebase", url: "https://github.com/firebase/firebase-ios-sdk.git", .upToNextMajor(from: "9.3.0")),
+        .package(name: "Firebase", url: "https://github.com/firebase/firebase-ios-sdk.git", .upToNextMajor(from: "9.6.0")),
         .package(name: "BetterCodable", url: "https://github.com/marksands/BetterCodable.git", .upToNextMajor(from: "0.4.0"))
     ],
     targets: [

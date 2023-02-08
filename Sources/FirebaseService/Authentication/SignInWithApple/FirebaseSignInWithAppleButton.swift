@@ -11,51 +11,51 @@ import FirebaseAuth
 
 public struct FirebaseSignInWithAppleButton<Profile: Codable & Firestorable & Nameable & Equatable>: View {
     
-    private var label: SignInWithAppleButton.Label
-    private var requestedScopes: [ASAuthorization.Scope]?
+    private var profile: Profile
+    private var label: FirebaseSignInWithAppleButtonLabel
     private var onCompletion: ((Result<Profile, Error>) -> Void)
-    
-    @State private var currentNonce: String? = nil
-    
-    @Binding public var profile: Profile
     
     @EnvironmentObject private var authenticator: FirebaseAuthenticator<Profile>
     
-    public init(label: SignInWithAppleButton.Label = .signIn, requestedScopes: [ASAuthorization.Scope]? = [.fullName, .email], profile: Binding<Profile>, onCompletion: @escaping ((Result<Profile, Error>) -> Void) = {_ in}) {
+    public init(label: FirebaseSignInWithAppleButtonLabel, profile: Profile, onCompletion: @escaping ((Result<Profile, Error>) -> Void) = {_ in}) {
         self.label = label
-        self.requestedScopes = requestedScopes
-        self._profile = profile
+        self.profile = profile
         self.onCompletion = onCompletion
     }
     
     public var body: some View {
-        SignInWithAppleButton(label) { (request) in
-            request.requestedScopes = requestedScopes
-            let nonce = FirebaseSignInWithAppleUtils.randomNonceString()
-            currentNonce = nonce
-            request.nonce = FirebaseSignInWithAppleUtils.sha256(nonce)
-        } onCompletion: { (result) in
-            switch result {
-            case .success(let authorization):
-                FirebaseSignInWithAppleUtils.createToken(from: authorization, currentNonce: currentNonce) { result in
-                    switch result {
-                    case .success(let firebaseSignInWithAppleResult):
-                        guard var profile = self.authenticator.profile else { return }
-                        profile.uid = firebaseSignInWithAppleResult.uid
-                        profile.firstName = firebaseSignInWithAppleResult.token.appleIDCredential.fullName?.givenName ?? ""
-                        profile.middleName = firebaseSignInWithAppleResult.token.appleIDCredential.fullName?.middleName ?? ""
-                        profile.lastName = firebaseSignInWithAppleResult.token.appleIDCredential.fullName?.familyName ?? ""
-                        onCompletion(.success(profile))
-                    case .failure(let error):
-                        onCompletion(.failure(error))
-                    }
-                }
-            case .failure(let error):
-                onCompletion(.failure(error))
+        Button {
+            continueWitApple()
+        } label: {
+            switch label {
+            case .signIn:
+                Label("Sign in with Apple", systemImage: "applelogo")
+            case .signUp:
+                Label("Sign up with Apple", systemImage: "applelogo")
+            case .continueWithApple:
+                Label("Continue with Apple", systemImage: "applelogo")
+            case .custom(let text):
+                Label(text, systemImage: "applelogo")
             }
         }
-        .onChange(of: profile) { newValue in
-            authenticator.profile = profile
+        .padding(.vertical, 14)
+        .padding(.horizontal, 18)
+        .bold()
+        .foregroundColor(.white)
+        .background {
+            Color.black
+        }
+        .cornerRadius(6)
+    }
+    
+    func continueWitApple() {
+        Task {
+            do {
+                try await authenticator.continueWithApple(profile: profile)
+                onCompletion(.success(self.profile))
+            } catch {
+                onCompletion(.failure(error))
+            }
         }
     }
     
