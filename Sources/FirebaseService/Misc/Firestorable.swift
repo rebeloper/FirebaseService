@@ -8,5 +8,5 @@
 import Foundation
 
 public protocol Firestorable {
-    var uid: String { get set }
+    var uid: String? { get set }
 }

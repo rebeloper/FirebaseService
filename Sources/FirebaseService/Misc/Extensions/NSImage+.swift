@@ -5,11 +5,9 @@
 //  Created by Alex Nagy on 03.01.2023.
 //
 
-#if canImport(Cocoa)
-import Cocoa
-#endif
-
 #if os(macOS)
+import AppKit
+
 public extension NSImage {
     func jpegData() -> Data? {
         let cgImage = self.cgImage(forProposedRect: nil, context: nil, hints: nil)!

@@ -38,6 +38,7 @@ public struct FirebaseSignInWithAppleButton<Profile: Codable & Firestorable & Na
                 Label(text, systemImage: "applelogo")
             }
         }
+        .buttonStyle(.plain)
         .padding(.vertical, 14)
         .padding(.horizontal, 18)
         .bold()

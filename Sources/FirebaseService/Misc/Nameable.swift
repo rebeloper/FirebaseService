@@ -8,8 +8,8 @@
 import Foundation
 
 public protocol Nameable {
-    var firstName: String { get set }
-    var middleName: String { get set }
-    var lastName: String { get set }
+    var firstName: String? { get set }
+    var middleName: String? { get set }
+    var lastName: String? { get set }
 }
 
