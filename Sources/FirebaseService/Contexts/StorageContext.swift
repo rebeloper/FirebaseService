@@ -145,7 +145,7 @@ public class StorageContext {
     private static var currentUploadTask: StorageUploadTask?
     
 #if os(iOS)
-    public static func batchUpload(images: [UIImage], atPath path: StorageReference, oldImageUrls: [String], compressionQuality: CGFloat = 1.0, completion: @escaping (Result<[String], Error>) -> ()) {
+    public static func batchUpload(images: [UIImage], atPath path: String, oldImageUrls: [String], compressionQuality: CGFloat = 1.0, completion: @escaping (Result<[String], Error>) -> ()) {
         if images.count == 0 { completion(.success([])) }
         var datas = [Data]()
         images.forEach { (image) in
@@ -158,7 +158,7 @@ public class StorageContext {
 #endif
     
 #if os(macOS)
-    public static func batchUpload(images: [NSImage], atPath path: StorageReference, oldImageUrls: [String], completion: @escaping (Result<[String], Error>) -> ()) {
+    public static func batchUpload(images: [NSImage], atPath path: String, oldImageUrls: [String], completion: @escaping (Result<[String], Error>) -> ()) {
         if images.count == 0 { completion(.success([])) }
         var datas = [Data]()
         images.forEach { (image) in
@@ -170,7 +170,7 @@ public class StorageContext {
     }
 #endif
     
-    public static func batchUpload(datas: [Data], atPath path: StorageReference, oldDataUrls: [String], completion: @escaping (Result<[String], Error>) -> ()) {
+    public static func batchUpload(datas: [Data], atPath path: String, oldDataUrls: [String], completion: @escaping (Result<[String], Error>) -> ()) {
         if datas.count == 0 {
             completion(.failure(FirebaseError.noData))
             return
@@ -191,7 +191,7 @@ public class StorageContext {
         }
     }
     
-    public static func uploadData(forIndex index:Int, datas: [Data], atPath path: StorageReference, completion: @escaping (Result<[String], Error>) -> ()) {
+    public static func uploadData(forIndex index:Int, datas: [Data], atPath path: String, completion: @escaping (Result<[String], Error>) -> ()) {
         
         if index < datas.count {
             
@@ -213,8 +213,8 @@ public class StorageContext {
         completion(.success(downloadUrls))
     }
     
-    public static func upload(data: Data, withName fileName: String, atPath path: StorageReference, completion: @escaping (Result<String, Error>) -> Void) {
-        let reference = path.child(fileName)
+    public static func upload(data: Data, withName fileName: String, atPath path: String, completion: @escaping (Result<String, Error>) -> Void) {
+        let reference = Storage.storage().reference(withPath: path).child(fileName)
         
         self.currentUploadTask = reference.putData(data, metadata: nil) { (metadata, err) in
             if let err = err {
@@ -390,7 +390,7 @@ public class StorageContext {
     
 #if os(iOS)
     @MainActor
-    public static func batchUpload(images: [UIImage], atPath path: StorageReference, oldImageUrls: [String], compressionQuality: CGFloat = 1.0) async throws -> [String] {
+    public static func batchUpload(images: [UIImage], atPath path: String, oldImageUrls: [String], compressionQuality: CGFloat = 1.0) async throws -> [String] {
         try await withCheckedThrowingContinuation({ continuation in
             batchUpload(images: images, atPath: path, oldImageUrls: oldImageUrls, compressionQuality: compressionQuality) { result in
                 switch result {
@@ -406,7 +406,7 @@ public class StorageContext {
     
 #if os(macOS)
     @MainActor
-    public static func batchUpload(images: [NSImage], atPath path: StorageReference, oldImageUrls: [String]) async throws -> [String] {
+    public static func batchUpload(images: [NSImage], atPath path: String, oldImageUrls: [String]) async throws -> [String] {
         try await withCheckedThrowingContinuation({ continuation in
             batchUpload(images: images, atPath: path, oldImageUrls: oldImageUrls) { result in
                 switch result {
@@ -421,7 +421,7 @@ public class StorageContext {
 #endif
     
     @MainActor
-    public static func batchUpload(datas: [Data], atPath path: StorageReference, oldDataUrls: [String]) async throws -> [String] {
+    public static func batchUpload(datas: [Data], atPath path: String, oldDataUrls: [String]) async throws -> [String] {
         try await withCheckedThrowingContinuation({ continuation in
             batchUpload(datas: datas, atPath: path, oldDataUrls: oldDataUrls) { result in
                 switch result {
