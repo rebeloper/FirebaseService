@@ -71,13 +71,17 @@ final public class FirebaseAuthenticator<Profile: Codable & Firestorable & Namea
             self.user = user
             self.currentUserUid = user?.uid
             self.email = user?.email ?? ""
-            self.value = user != nil ? .authenticated : .notAuthenticated
-            if let uid = user?.uid {
+            if user == nil {
+                self.value = .notAuthenticated
+            } else {
+                guard let uid = user?.uid else { return }
                 Task {
                     do {
                         try await self.fetchProfile(with: uid)
+                        self.value = self.profile?.uid != "" ? .authenticated : .notAuthenticated
                     } catch {
                         print(error.localizedDescription)
+                        self.value = .notAuthenticated
                     }
                 }
             }
