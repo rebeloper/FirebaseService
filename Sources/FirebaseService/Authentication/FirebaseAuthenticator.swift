@@ -60,6 +60,7 @@ final public class FirebaseAuthenticator<Profile: Codable & Firestorable & Namea
         logoutIfNeeded(shouldLogoutUponLaunch)
         
         profile.publisher.sink { _ in
+            print("profile: \(self.profile)")
             self.value = self.profile != nil ? .authenticated : .notAuthenticated
         }.store(in: &cancellables)
     }
