@@ -8,6 +8,7 @@
 import SwiftUI
 import FirebaseAuth
 import AuthenticationServices
+import Combine
 
 public struct FirebaseAuthenticatorView<Content: View, Profile: Codable & Firestorable & Nameable & Equatable>: View {
     
@@ -49,12 +50,18 @@ final public class FirebaseAuthenticator<Profile: Codable & Firestorable & Namea
     
     public var handle: AuthStateDidChangeListenerHandle?
     
+    private var cancellables: Set<AnyCancellable> = []
+    
     @MainActor
     public init(configuration: Configuration, shouldLogoutUponLaunch: Bool = false) {
         self.configuration = configuration
         super.init()
         startAuthListener()
         logoutIfNeeded(shouldLogoutUponLaunch)
+        
+        profile.publisher.sink { _ in
+            self.value = self.profile != nil ? .authenticated : .notAuthenticated
+        }.store(in: &cancellables)
     }
     
     @MainActor
@@ -72,13 +79,12 @@ final public class FirebaseAuthenticator<Profile: Codable & Firestorable & Namea
             self.currentUserUid = user?.uid
             self.email = user?.email ?? ""
             if user == nil {
-                self.value = .notAuthenticated
+                self.profile = nil
             } else {
                 guard let uid = user?.uid else { return }
                 Task {
                     do {
                         try await self.fetchProfile(with: uid)
-                        self.value = self.profile?.uid != "" ? .authenticated : .notAuthenticated
                     } catch {
                         print(error.localizedDescription)
                         self.value = .notAuthenticated
