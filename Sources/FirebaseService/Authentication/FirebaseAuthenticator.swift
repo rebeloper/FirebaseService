@@ -78,6 +78,7 @@ final public class FirebaseAuthenticator<Profile: Codable & Firestorable & Namea
             self.user = user
             self.currentUserUid = user?.uid
             self.email = user?.email ?? ""
+            print("user: \(user)")
             if user == nil {
                 self.profile = nil
             } else {
