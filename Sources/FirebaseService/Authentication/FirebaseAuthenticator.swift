@@ -58,11 +58,6 @@ final public class FirebaseAuthenticator<Profile: Codable & Firestorable & Namea
         super.init()
         startAuthListener()
         logoutIfNeeded(shouldLogoutUponLaunch)
-        
-        profile.publisher.sink { _ in
-            print("profile: \(self.profile)")
-            self.value = self.profile != nil ? .authenticated : .notAuthenticated
-        }.store(in: &cancellables)
     }
     
     @MainActor
@@ -74,6 +69,12 @@ final public class FirebaseAuthenticator<Profile: Codable & Firestorable & Namea
     
     @MainActor
     private func startAuthListener() {
+        
+        profile.publisher.sink { _ in
+            print("profile: \(self.profile)")
+            self.value = self.profile != nil ? .authenticated : .notAuthenticated
+        }.store(in: &cancellables)
+        
         removeStateDidChangeListener()
         handle = Auth.auth().addStateDidChangeListener({ auth, user in
             self.user = user
