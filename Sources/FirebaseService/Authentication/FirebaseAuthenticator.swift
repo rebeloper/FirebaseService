@@ -78,14 +78,16 @@ final public class FirebaseAuthenticator<Profile: Codable & Firestorable & Namea
             self.user = user
             self.currentUserUid = user?.uid
             self.email = user?.email ?? ""
-            print("user: \(user)")
             if user == nil {
                 self.profile = nil
             } else {
+                print("user: \(user?.uid)")
                 guard let uid = user?.uid else { return }
+                print(uid)
                 Task {
                     do {
                         try await self.fetchProfile(with: uid)
+                        print(self.profile)
                     } catch {
                         print(error.localizedDescription)
                         self.value = .notAuthenticated
