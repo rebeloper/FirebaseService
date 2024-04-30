@@ -27,9 +27,12 @@ public struct FirebaseAuthenticatorView<Content: View, Profile: Codable & Firest
                 if profile != nil, profile?.uid != nil, profile?.uid != "" {
                     guard authenticator.value != .authenticated else { return }
                     authenticator.value = .authenticated
-                } else {
+                } else if authenticator.user == nil {
                     guard authenticator.value != .notAuthenticated else { return }
                     authenticator.value = .notAuthenticated
+                } else {
+                    guard authenticator.value != .undefined else { return }
+                    authenticator.value = .undefined
                 }
             })
     }
