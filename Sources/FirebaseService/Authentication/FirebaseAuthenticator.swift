@@ -24,6 +24,7 @@ public struct FirebaseAuthenticatorView<Content: View, Profile: Codable & Firest
         content()
             .environmentObject(authenticator)
             .onReceive(authenticator.$profile, perform: { profile in
+                print(profile)
                 authenticator.value = profile != nil ? profile!.uid != "" ? .authenticated : .notAuthenticated : .notAuthenticated
             })
     }
@@ -141,12 +142,11 @@ final public class FirebaseAuthenticator<Profile: Codable & Firestorable & Namea
     
     @MainActor
     public func continueWithApple(profile: Profile) async throws {
-        var profile = try await withCheckedThrowingContinuation({ continuation in
+        let profile = try await withCheckedThrowingContinuation({ continuation in
             continueWithApple(profile: profile) { result in
                 continuation.resume(with: result)
             }
         })
-        profile.uid = user?.uid
         self.profile = try await FirestoreContext.create(profile, collectionPath: configuration.path, ifNonExistent: true)
     }
     
@@ -177,7 +177,7 @@ final public class FirebaseAuthenticator<Profile: Codable & Firestorable & Namea
             switch result {
             case .success(let firebaseSignInWithAppleResult):
                 guard var profile = self.profile else { return }
-//                profile.uid = firebaseSignInWithAppleResult.uid
+                profile.uid = firebaseSignInWithAppleResult.uid
                 profile.firstName = firebaseSignInWithAppleResult.token.appleIDCredential.fullName?.givenName ?? ""
                 profile.middleName = firebaseSignInWithAppleResult.token.appleIDCredential.fullName?.middleName ?? ""
                 profile.lastName = firebaseSignInWithAppleResult.token.appleIDCredential.fullName?.familyName ?? ""
