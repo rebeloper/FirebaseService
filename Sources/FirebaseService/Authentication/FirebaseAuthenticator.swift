@@ -24,7 +24,7 @@ public struct FirebaseAuthenticatorView<Content: View, Profile: Codable & Firest
         content()
             .environmentObject(authenticator)
             .onReceive(authenticator.$profile, perform: { profile in
-                authenticator.value = profile != nil ? .authenticated : .notAuthenticated
+                authenticator.value = profile != nil ? profile!.uid != "" ? .authenticated : .notAuthenticated : .notAuthenticated
             })
     }
 }
@@ -77,13 +77,10 @@ final public class FirebaseAuthenticator<Profile: Codable & Firestorable & Namea
             if user == nil {
                 self.profile = nil
             } else {
-                print("user: \(user?.uid)")
                 guard let uid = user?.uid else { return }
-                print(uid)
                 Task {
                     do {
                         try await self.fetchProfile(with: uid)
-                        print(self.profile)
                     } catch {
                         print(error.localizedDescription)
                         self.value = .notAuthenticated
