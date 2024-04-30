@@ -8,7 +8,6 @@
 import SwiftUI
 import FirebaseAuth
 import AuthenticationServices
-import Combine
 
 public struct FirebaseAuthenticatorView<Content: View, Profile: Codable & Firestorable & Nameable & Equatable>: View {
     
@@ -24,6 +23,9 @@ public struct FirebaseAuthenticatorView<Content: View, Profile: Codable & Firest
     public var body: some View {
         content()
             .environmentObject(authenticator)
+            .onReceive(authenticator.$profile, perform: { profile in
+                authenticator.value = profile != nil ? .authenticated : .notAuthenticated
+            })
     }
 }
 
@@ -50,8 +52,6 @@ final public class FirebaseAuthenticator<Profile: Codable & Firestorable & Namea
     
     public var handle: AuthStateDidChangeListenerHandle?
     
-    private var cancellables: Set<AnyCancellable> = []
-    
     @MainActor
     public init(configuration: Configuration, shouldLogoutUponLaunch: Bool = false) {
         self.configuration = configuration
@@ -69,12 +69,6 @@ final public class FirebaseAuthenticator<Profile: Codable & Firestorable & Namea
     
     @MainActor
     private func startAuthListener() {
-        
-        profile.publisher.sink { _ in
-            print("profile: \(self.profile)")
-            self.value = self.profile != nil ? .authenticated : .notAuthenticated
-        }.store(in: &cancellables)
-        
         removeStateDidChangeListener()
         handle = Auth.auth().addStateDidChangeListener({ auth, user in
             self.user = user
