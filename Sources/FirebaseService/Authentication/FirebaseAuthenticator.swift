@@ -25,7 +25,11 @@ public struct FirebaseAuthenticatorView<Content: View, Profile: Codable & Firest
             .environmentObject(authenticator)
             .onReceive(authenticator.$profile, perform: { profile in
                 print(profile)
-                authenticator.value = profile != nil ? profile!.uid != "" ? .authenticated : .notAuthenticated : .notAuthenticated
+                if profile != nil, profile?.uid != nil, profile?.uid != "" {
+                    authenticator.value = .authenticated
+                } else {
+                    authenticator.value = .notAuthenticated
+                }
             })
     }
 }
